@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["@x402/core", "@x402/svm", "@coinbase/cdp-sdk"],
 };
 
 export default nextConfig;

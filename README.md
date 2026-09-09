@@ -1,4 +1,4 @@
-# Robinhood Chain Prediction Market
+# Edge Protocol
 
 A decentralized prediction market built on the Robinhood Chain, focusing on a seamless user experience similar to Web2 applications with the security and transparency of Web3.
 

@@ -5,14 +5,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT as string;
 
 app.use(cors());
 app.use(express.json());
 
 // Routes
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'robinhood-pm-backend' });
+  res.json({ status: 'ok', service: 'edge-protocol-backend' });
 });
 
 // Start Server

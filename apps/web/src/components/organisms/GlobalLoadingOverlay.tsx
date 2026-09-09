@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export const GlobalLoadingOverlay = () => {
   const pathname = usePathname();
@@ -35,12 +36,10 @@ export const GlobalLoadingOverlay = () => {
       </div>
 
       {/* Branding & Loading Indicator */}
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-[3px] border-white/90 shadow-[0_0_20px_rgba(255,255,255,0.4)] animate-pulse"></div>
-          <span className="font-bold text-3xl tracking-tight drop-shadow-lg text-white">EDGE Protocol</span>
-        </div>
-        
+      <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+        <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={80} height={80} className="rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-pulse" />
+        <span className="font-bold text-3xl tracking-tight drop-shadow-lg text-white">EDGE Protocol</span>
+
         {/* Loading Dots */}
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#594EE6] animate-bounce" style={{ animationDelay: '0ms' }}></div>

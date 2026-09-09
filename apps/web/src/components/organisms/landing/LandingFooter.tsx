@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const LandingFooter = () => {
   return (
@@ -9,7 +10,7 @@ export const LandingFooter = () => {
         {/* Brand & Copyright */}
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full border-[2.5px] border-white/90"></div>
+            <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={20} height={20} className="rounded-full shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
             <span className="font-bold text-sm tracking-tight">EDGE Protocol</span>
           </div>
           <span className="text-white/20">|</span>

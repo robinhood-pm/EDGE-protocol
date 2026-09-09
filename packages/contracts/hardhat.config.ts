@@ -1,10 +1,14 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
     settings: {
+      evmVersion: "cancun",
       optimizer: {
         enabled: true,
         runs: 200,
@@ -12,12 +16,17 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    hardhat: {
+      forking: {
+        url: process.env.ROBINHOOD_TESTNET_RPC as string,
+      },
+    },
     robinhoodTestnet: {
-      url: "https://rpc.testnet.chain.robinhood.com",
+      url: process.env.ROBINHOOD_TESTNET_RPC as string,
       chainId: 46630,
     },
     robinhoodMainnet: {
-      url: "https://rpc.mainnet.chain.robinhood.com",
+      url: process.env.ROBINHOOD_MAINNET_RPC as string,
       chainId: 4663,
     }
   }

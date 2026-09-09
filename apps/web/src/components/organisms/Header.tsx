@@ -1,8 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Search, Grid, List, Globe } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/Badge';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export function Header() {
   return (
@@ -10,7 +12,7 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 max-w-screen-2xl mx-auto gap-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <div className="w-5 h-5 rounded-full border-[3px] border-white/90 shadow-[0_0_15px_rgba(255,255,255,0.3)]"></div>
+            <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
             <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
           </Link>
           <nav className="hidden md:flex items-center gap-10 text-[13px] font-medium text-white/70">
@@ -41,8 +43,11 @@ export function Header() {
 
         <div className="flex items-center justify-end space-x-4">
           <div className="hidden sm:flex items-center gap-2">
-            <Button variant="ghost" className="text-foreground">Log In</Button>
-            <Button className="bg-white text-black hover:bg-neutral-200 rounded-full px-6 font-semibold">Sign Up</Button>
+            <ConnectButton 
+              showBalance={false} 
+              chainStatus="icon" 
+              accountStatus="address"
+            />
           </div>
           <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
             <Globe className="h-5 w-5 text-muted" />

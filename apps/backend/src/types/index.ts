@@ -16,10 +16,10 @@ export interface Order {
 }
 
 export const EIP712_DOMAIN = {
-  name: 'RobinhoodChainPredictionMarket',
+  name: 'EdgeProtocolExchange',
   version: '1',
-  chainId: 46630, // Testnet
-  verifyingContract: '0x0000000000000000000000000000000000000000', // To be filled after deploy
+  chainId: Number(process.env.ROBINHOOD_CHAIN_ID),
+  verifyingContract: process.env.EXCHANGE_ADDRESS as `0x${string}`,
 };
 
 export const ORDER_TYPES = {
