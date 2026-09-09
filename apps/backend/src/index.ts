@@ -10,7 +10,15 @@ const PORT = process.env.PORT as string;
 app.use(cors());
 app.use(express.json());
 
+import marketRoutes from './routes/market.routes';
+import orderRoutes from './routes/order.routes';
+import userRoutes from './routes/user.routes';
+
 // Routes
+app.use('/api/markets', marketRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/users', userRoutes);
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'edge-protocol-backend' });
 });
