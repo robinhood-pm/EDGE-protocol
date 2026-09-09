@@ -1,0 +1,41 @@
+{
+  "id": "btc-up-down-15m",
+  "title": "BTC Up or Down 15m",
+  "category": "Crypto",
+  "icon": "🪙",
+  "priceToBeat": 78592.46,
+  "currentPrice": 78580.00,
+  "priceChangePercent": -0.02,
+  "totalVolume": 5697,
+  "timeLeft": "03:15",
+  "status": "Live",
+  "chance": 36,
+  "resolutionRules": "This market will resolve to 'Up' if the BTC/USDT price at the end of the time range specified in the title is greater than the price at the beginning of that range.\n\nIt will resolve to 'Down' if the BTC/USDT price at the end of the time range is lower than the price at the beginning of that range.\n\nIf the two prices are exactly equal, the market will resolve 50-50...",
+  "chartData": [
+    { "time": "10:25:15 AM", "price": 78580 },
+    { "time": "10:25:20 AM", "price": 78582 },
+    { "time": "10:25:25 AM", "price": 78585 },
+    { "time": "10:25:30 AM", "price": 78579 },
+    { "time": "10:25:35 AM", "price": 78580 }
+  ],
+  "orderBook": {
+    "bids": [
+      { "price": 35, "shares": 37.5, "total": 13.12 },
+      { "price": 34, "shares": 53.9, "total": 31.45 },
+      { "price": 33, "shares": 114.4, "total": 69.20 },
+      { "price": 32, "shares": 108.0, "total": 104.00 },
+      { "price": 31, "shares": 105.1, "total": 142.70 }
+    ],
+    "asks": [
+      { "price": 36, "shares": 4.1, "total": 1.47 },
+      { "price": 37, "shares": 60.0, "total": 23.67 },
+      { "price": 38, "shares": 78.9, "total": 53.65 },
+      { "price": 39, "shares": 45.9, "total": 71.55 },
+      { "price": 40, "shares": 92.5, "total": 98.47 }
+    ]
+  },
+  "rewards": {
+    "pointsToEarn": 750,
+    "status": "Live"
+  }
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "id": "btc-up-down-15m",
+    "title": "BTC Up or Down 15m",
+    "category": "Crypto",
+    "icon": "🪙",
+    "yesProbability": 39,
+    "noProbability": 61,
+    "yesPrice": 39,
+    "noPrice": 62,
+    "totalVolume": 3363,
+    "status": "Live",
+    "endTime": "10:30 AM",
+    "isYield": false
+  },
+  {
+    "id": "laptop-fdv",
+    "title": "LAPTOP FDV above ____ one day after launch?",
+    "category": "Crypto",
+    "icon": "💻",
+    "yesProbability": 97,
+    "noProbability": 3,
+    "yesPrice": 97,
+    "noPrice": 3,
+    "totalVolume": 137000,
+    "status": "Live",
+    "endTime": "Jan 1, 2027",
+    "isYield": true,
+    "options": [
+      { "label": "$10M", "yesProbability": 97 },
+      { "label": "$25M", "yesProbability": 95 },
+      { "label": "$50M", "yesProbability": 88 }
+    ]
+  },
+  {
+    "id": "btc-up-down-5m",
+    "title": "BTC Up or Down 5m",
+    "category": "Crypto",
+    "icon": "🪙",
+    "yesProbability": 55,
+    "noProbability": 45,
+    "yesPrice": 56,
+    "noPrice": 47,
+    "totalVolume": 22855,
+    "status": "Live",
+    "endTime": "10:25 AM",
+    "isYield": false
+  },
+  {
+    "id": "presidential-election",
+    "title": "Presidential Election Winner 2028",
+    "category": "Politics",
+    "icon": "🗳️",
+    "yesProbability": 88.5,
+    "noProbability": 11.5,
+    "yesPrice": 88.5,
+    "noPrice": 11.5,
+    "totalVolume": 2544231,
+    "status": "Live",
+    "endTime": "Nov 7, 2028",
+    "isYield": false,
+    "options": [
+      { "label": "Ron DeSantis", "probability": 88.5 },
+      { "label": "Tucker Carlson", "probability": 88 },
+      { "label": "Andy Beshear", "probability": 77.9 }
+    ]
+  },
+  {
+    "id": "eth-up-down-5m",
+    "title": "ETH Up or Down 5m",
+    "category": "Crypto",
+    "icon": "⟠",
+    "yesProbability": 23,
+    "noProbability": 77,
+    "yesPrice": 23,
+    "noPrice": 78,
+    "totalVolume": 8474,
+    "status": "Live",
+    "endTime": "10:35 AM",
+    "isYield": false
+  }
+]
