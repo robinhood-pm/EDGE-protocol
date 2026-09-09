@@ -24,6 +24,7 @@ const config: HardhatUserConfig = {
     robinhoodTestnet: {
       url: process.env.ROBINHOOD_TESTNET_RPC as string,
       chainId: 46630,
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     robinhoodMainnet: {
       url: process.env.ROBINHOOD_MAINNET_RPC as string,

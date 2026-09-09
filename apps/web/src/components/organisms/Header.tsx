@@ -12,7 +12,7 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 max-w-screen-2xl mx-auto gap-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+            <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full bg-white ring-1 ring-white/80 shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
             <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
           </Link>
           <nav className="hidden md:flex items-center gap-10 text-[13px] font-medium text-white/70">

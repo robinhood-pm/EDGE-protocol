@@ -8,7 +8,7 @@ export const LandingNavbar = () => {
     <nav className="fixed top-0 w-full z-50 bg-[#070709]/60 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] supports-[backdrop-filter]:bg-[#070709]/40">
       <div className="container max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+          <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full bg-white ring-1 ring-white/80 shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
           <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
         </Link>
         <div className="hidden md:flex items-center gap-10 text-[13px] font-medium text-white/70">

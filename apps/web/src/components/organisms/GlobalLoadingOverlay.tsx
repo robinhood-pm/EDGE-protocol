@@ -37,7 +37,7 @@ export const GlobalLoadingOverlay = () => {
 
       {/* Branding & Loading Indicator */}
       <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
-        <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={80} height={80} className="rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-pulse" />
+        <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={80} height={80} className="rounded-full bg-white ring-2 ring-white/80 shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-pulse" />
         <span className="font-bold text-3xl tracking-tight drop-shadow-lg text-white">EDGE Protocol</span>
 
         {/* Loading Dots */}
