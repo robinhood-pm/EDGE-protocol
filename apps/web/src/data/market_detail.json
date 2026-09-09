@@ -2,7 +2,7 @@
   "id": "btc-up-down-15m",
   "title": "BTC Up or Down 15m",
   "category": "Crypto",
-  "icon": "🪙",
+  "image": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
   "priceToBeat": 78592.46,
   "currentPrice": 78580.00,
   "priceChangePercent": -0.02,

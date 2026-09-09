@@ -24,8 +24,8 @@ export default function MarketPage() {
             {/* Market Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-xl bg-neutral-800 flex items-center justify-center text-4xl shadow-sm">
-                  {market.icon}
+                <div className="w-16 h-16 rounded-xl bg-neutral-800 flex items-center justify-center shadow-sm overflow-hidden p-2">
+                  <img src={market.image} alt={market.title} className="w-full h-full object-contain" />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs text-muted font-medium">
@@ -155,7 +155,9 @@ export default function MarketPage() {
               <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <div className="flex items-center justify-between p-4 bg-background border-b border-border">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-neutral-800 flex items-center justify-center text-xs">🪙</div>
+                    <div className="w-6 h-6 rounded bg-neutral-800 flex items-center justify-center overflow-hidden">
+                      <img src={market.image} alt={market.title} className="w-4 h-4 object-contain" />
+                    </div>
                     <span className="font-bold text-sm truncate w-40">{market.title}</span>
                   </div>
                   <span className="text-yes font-bold text-sm">Up</span>

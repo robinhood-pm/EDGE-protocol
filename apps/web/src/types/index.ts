@@ -8,7 +8,7 @@ export interface Market {
   id: string;
   title: string;
   category: string;
-  icon: string;
+  image: string;
   yesProbability: number;
   noProbability: number;
   yesPrice: number;

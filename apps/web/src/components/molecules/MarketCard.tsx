@@ -22,8 +22,8 @@ export function MarketCard({ market }: MarketCardProps) {
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-md bg-neutral-800 flex items-center justify-center text-2xl flex-shrink-0">
-              {market.icon}
+            <div className="w-10 h-10 rounded-md bg-neutral-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img src={market.image} alt={market.title} className="w-6 h-6 object-contain" />
             </div>
             <div>
               <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 text-foreground group-hover:text-blue-400 transition-colors">
