@@ -1,0 +1,52 @@
+{
+  "openPositions": [
+    {
+      "id": "1",
+      "marketId": "m1",
+      "title": "BTC to hit $70k by EOD",
+      "outcome": "YES",
+      "shares": 2500,
+      "avgBuyPrice": 0.45,
+      "currentPrice": 0.62,
+      "totalValue": 1550.00,
+      "pnlValue": 425.00,
+      "pnlPercent": 37.77
+    },
+    {
+      "id": "2",
+      "marketId": "m2",
+      "title": "ETH Gas < 15 gwei at noon",
+      "outcome": "NO",
+      "shares": 1000,
+      "avgBuyPrice": 0.20,
+      "currentPrice": 0.15,
+      "totalValue": 150.00,
+      "pnlValue": -50.00,
+      "pnlPercent": -25.00
+    }
+  ],
+  "resolvedPositions": [
+    {
+      "id": "3",
+      "marketId": "m3",
+      "title": "Fed pauses rates in September",
+      "outcome": "YES",
+      "shares": 5000,
+      "avgBuyPrice": 0.40,
+      "status": "WON",
+      "claimableAmount": 5000.00,
+      "claimed": false
+    },
+    {
+      "id": "4",
+      "marketId": "m4",
+      "title": "Solana outage in Q3",
+      "outcome": "YES",
+      "shares": 2000,
+      "avgBuyPrice": 0.15,
+      "status": "LOST",
+      "claimableAmount": 0,
+      "claimed": true
+    }
+  ]
+}

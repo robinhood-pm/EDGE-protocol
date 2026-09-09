@@ -9,7 +9,7 @@ export default function Home() {
   const markets = marketsData as Market[];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryTabs />
       
@@ -27,7 +27,7 @@ export default function Home() {
           {/* Right Sidebar */}
           <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
             {/* Promo Banner */}
-            <div className="bg-card rounded-xl overflow-hidden border border-border relative aspect-[2/1] flex items-center justify-center p-6 text-center">
+            <div className="bg-white/5 rounded-xl overflow-hidden border border-white/10 relative aspect-[2/1] flex items-center justify-center p-6 text-center backdrop-blur-sm">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20" />
               <div className="relative z-10">
                 <h3 className="font-bold text-xl mb-2">Stay in the Loop</h3>

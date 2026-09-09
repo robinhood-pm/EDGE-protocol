@@ -11,7 +11,7 @@ import { LandingFooter } from '@/components/organisms/landing/LandingFooter';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#070709] text-white overflow-hidden font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen flex flex-col overflow-hidden">
       <LandingNavbar />
       <LandingHero />
       <SupportedEcosystem />

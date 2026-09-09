@@ -18,7 +18,7 @@ export function MarketCard({ market }: MarketCardProps) {
 
   return (
     <Link href={`/market/${market.id}`} className="block group">
-      <div className="bg-card border border-border rounded-xl p-4 hover:border-border/80 transition-colors h-full flex flex-col">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all h-full flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-start gap-3">
@@ -68,9 +68,9 @@ export function MarketCard({ market }: MarketCardProps) {
               </span>
             </div>
             {/* Probability Bar */}
-            <div className="h-1.5 w-full bg-background rounded-full overflow-hidden flex mb-4">
+            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden flex mb-4">
               <div className="h-full bg-yes" style={{ width: `${market.yesProbability}%` }} />
-              <div className="h-full bg-background w-1" />
+              <div className="h-full bg-black/40 w-1" />
               <div className="h-full bg-no" style={{ width: `${market.noProbability}%` }} />
             </div>
             

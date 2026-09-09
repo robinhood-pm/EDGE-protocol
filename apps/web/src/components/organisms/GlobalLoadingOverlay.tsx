@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 export const GlobalLoadingOverlay = () => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export const GlobalLoadingOverlay = () => {
     }, 4000);
 
     return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   if (!isInitializing) return null;
 
