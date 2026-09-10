@@ -269,7 +269,7 @@ export function TradePanel({ market }: TradePanelProps) {
                   <span className={o.side === 'YES' ? 'text-yes' : 'text-no'}>
                     BUY {o.side}
                   </span>
-                  <span>{o.price} ¢</span>
+                  <span>{Math.round(o.price * 100)} ¢</span>
                   <span>{Number(o.amount).toFixed(2)}</span>
                 </div>
               ))

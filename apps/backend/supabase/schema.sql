@@ -86,4 +86,9 @@ DROP POLICY IF EXISTS "Allow public read-only access to markets" ON public.marke
 CREATE POLICY "Allow public read-only access to markets" 
 ON public.markets FOR SELECT USING (true);
 
+-- Allow public read-only access to orders (SELECT) for realtime orderbook
+DROP POLICY IF EXISTS "Allow public read-only access to orders" ON public.orders;
+CREATE POLICY "Allow public read-only access to orders" 
+ON public.orders FOR SELECT USING (true);
+
 -- Backend using Service Role will automatically bypass this RLS.
