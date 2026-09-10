@@ -32,72 +32,68 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
             for (const buy of buyOrders) {
                 for (const sell of sellOrders) {
                     if (buy.status === 'PENDING' && sell.status === 'PENDING') {
-                        console.log(`[Matching Engine] Found match! Buy: ${buy.id} Sell: ${sell.id}`);
-                        
-                        try {
-                            const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
-                            const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001', provider);
-                            const exchange = new ethers.Contract(process.env.EXCHANGE_ADDRESS || '0x', EXCHANGE_ABI, relayer);
-
-                            if (buy.raw_order && sell.raw_order && process.env.RELAYER_PRIVATE_KEY) {
-                                console.log(`[Matching Engine] Relaying to contract ${process.env.EXCHANGE_ADDRESS} ...`);
-                                // In this MVP, we match a YES Buy with a YES Sell, or NO Buy with NO Sell. No modification needed!
-                                const tx = await exchange.matchOrders(
-                                    buy.raw_order,
-                                    buy.signature,
-                                    sell.raw_order,
-                                    sell.signature
-                                );
-                            const receipt = await tx.wait();
-                            console.log(`[Matching Engine] On-chain match successful: ${receipt.hash}`);
-
-                            // Update DB
-                            await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', buy.id);
-                            await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', sell.id);
-
-                            // Record trade for chart data
-                            const tradePrice = Number(buy.price); // The price the trade executed at
-                            const tradeAmount = Math.min(Number(buy.amount), Number(sell.amount));
-                            await supabase.from('trades').insert({
-                                network,
-                                market_id: marketId,
-                                buy_order_id: buy.id,
-                                sell_order_id: sell.id,
-                                price: tradePrice,
-                                amount: tradeAmount,
-                                buyer_address: buy.wallet_address,
-                                seller_address: sell.wallet_address,
-                                transaction_hash: receipt.hash,
-                            });
-
-                            // Update market volume and probability
-                            const tradeVolume = tradePrice * tradeAmount;
+                        if (Number(buy.price) >= Number(sell.price)) {
+                            console.log(`[Matching Engine] Found match! Buy: ${buy.id} (${buy.price}) Sell: ${sell.id} (${sell.price})`);
+                            
                             try {
-                                await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
-                            } catch (err) {
-                                // Fallback: direct update if RPC doesn't exist
-                                const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
-                                if (m) {
-                                    await supabase.from('markets').update({ total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, current_yes_probability: tradePrice * 100 }).eq('id', marketId).eq('network', network);
-                                }
-                            }
-                        } else {
-                            console.warn(`[Matching Engine] Cannot settle trade on-chain: Missing RELAYER_PRIVATE_KEY`);
-                        }
+                                const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
+                                const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001', provider);
+                                const exchange = new ethers.Contract(process.env.EXCHANGE_ADDRESS || '0x', EXCHANGE_ABI, relayer);
 
-                        // Mark as filled locally to avoid double matching in this loop
-                        buy.status = 'FILLED';
-                        sell.status = 'FILLED';
-                        console.log(`[Matching Engine] Trade recorded successfully.`);
-                    } catch (e) {
-                        console.error(`[Matching Engine] Match failed on-chain:`, e);
+                                if (buy.raw_order && sell.raw_order && process.env.RELAYER_PRIVATE_KEY) {
+                                    console.log(`[Matching Engine] Relaying to contract ${process.env.EXCHANGE_ADDRESS} ...`);
+                                    const tx = await exchange.matchOrders(
+                                        buy.raw_order,
+                                        buy.signature,
+                                        sell.raw_order,
+                                        sell.signature
+                                    );
+                                    const receipt = await tx.wait();
+                                    console.log(`[Matching Engine] On-chain match successful: ${receipt.hash}`);
+
+                                    await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', buy.id);
+                                    await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', sell.id);
+
+                                    const tradePrice = Number(buy.price); 
+                                    const tradeAmount = Math.min(Number(buy.amount), Number(sell.amount));
+                                    await supabase.from('trades').insert({
+                                        network,
+                                        market_id: marketId,
+                                        buy_order_id: buy.id,
+                                        sell_order_id: sell.id,
+                                        price: tradePrice,
+                                        amount: tradeAmount,
+                                        buyer_address: buy.wallet_address,
+                                        seller_address: sell.wallet_address,
+                                        transaction_hash: receipt.hash,
+                                    });
+
+                                    const tradeVolume = tradePrice * tradeAmount;
+                                    try {
+                                        await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
+                                    } catch (err) {
+                                        const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
+                                        if (m) {
+                                            await supabase.from('markets').update({ total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, current_yes_probability: tradePrice * 100 }).eq('id', marketId).eq('network', network);
+                                        }
+                                    }
+                                } else {
+                                    console.warn(`[Matching Engine] Cannot settle trade on-chain: Missing RELAYER_PRIVATE_KEY`);
+                                }
+
+                                buy.status = 'FILLED';
+                                sell.status = 'FILLED';
+                                console.log(`[Matching Engine] Trade recorded successfully.`);
+                            } catch (e) {
+                                console.error(`[Matching Engine] Match failed on-chain:`, e);
+                            }
+                        }
                     }
                 }
             }
-        }
-    };
+        };
 
-    await tryMatch(yesBuys, yesSells);
+        await tryMatch(yesBuys, yesSells);
         await tryMatch(noBuys, noSells);
     } catch (e) {
         console.error(`[Matching Engine] Error:`, e);
