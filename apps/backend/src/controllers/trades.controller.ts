@@ -4,7 +4,8 @@ import { supabase } from '../utils/supabase';
 export const getMarketTrades = async (req: Request, res: Response) => {
   try {
     const { marketId } = req.params;
-    const { range } = req.query; // '1h', '6h', '24h', '7d', 'all'
+    const rangeParam = req.query.range as string; // '1h', '6h', '24h', '7d', 'all'
+    const range = rangeParam ? rangeParam.toLowerCase() : 'all';
     const network = process.env.NETWORK || 'TESTNET';
 
     let query = supabase
