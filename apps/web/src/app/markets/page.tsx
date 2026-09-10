@@ -85,7 +85,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
+            
             {/* Crypto Up/Down Section */}
             <div>
               <h2 className="text-lg font-bold mb-4">Crypto Up/Down</h2>

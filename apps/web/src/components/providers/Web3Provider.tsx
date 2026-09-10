@@ -13,20 +13,20 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { logActivity } from "@/lib/logger";
 import "@rainbow-me/rainbowkit/styles.css";
 
+const rpcUrl = typeof window !== 'undefined' 
+  ? process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL as string
+  : (process.env.PRIVATE_ROBINHOOD_RPC_URL || process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL) as string;
+
 const robinhoodChain = defineChain({
   id: Number(process.env.NEXT_PUBLIC_ROBINHOOD_CHAIN_ID),
   name: process.env.NEXT_PUBLIC_ROBINHOOD_CHAIN_NAME as string,
   nativeCurrency: { name: "Robinhood Coin", symbol: "RHC", decimals: 18 },
   rpcUrls: {
     default: {
-      http: [
-        process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL as string
-      ],
+      http: [rpcUrl],
     },
     public: {
-      http: [
-        process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL as string
-      ],
+      http: [rpcUrl],
     },
   },
   blockExplorers: {

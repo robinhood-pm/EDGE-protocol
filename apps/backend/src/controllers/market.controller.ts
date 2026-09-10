@@ -19,15 +19,23 @@ export const getMarkets = async (req: Request, res: Response) => {
       return res.status(500).json({ error: error.message });
     }
 
-    const formattedMarkets = data.map(market => ({
-      id: market.id,
-      title: market.title,
-      slug: market.slug,
-      image: market.image_url || 'https://via.placeholder.com/150',
-      status: market.status === 'OPEN' ? 'Live' : market.status,
-      totalVolume: Number(market.total_volume_usdg),
-      currentPrice: Number(market.current_yes_probability) / 100
-    }));
+    const formattedMarkets = data.map(market => {
+      const yesProb = Number(market.current_yes_probability);
+      const noProb = 100 - yesProb;
+      return {
+        id: market.id,
+        title: market.title,
+        slug: market.slug,
+        image: market.image_url || 'https://via.placeholder.com/150',
+        status: market.status === 'OPEN' ? 'Live' : market.status,
+        totalVolume: Number(market.total_volume_usdg),
+        currentPrice: yesProb / 100,
+        yesProbability: Math.round(yesProb),
+        noProbability: Math.round(noProb),
+        yesPrice: Math.round(yesProb),
+        noPrice: Math.round(noProb)
+      };
+    });
 
     res.json({ markets: formattedMarkets });
   } catch (err: any) {

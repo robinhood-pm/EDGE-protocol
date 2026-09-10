@@ -11,6 +11,7 @@ import { MarketDetail } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAccount } from 'wagmi';
 
 // Setup Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -21,7 +22,9 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
   const resolvedParams = use(params);
   const marketId = resolvedParams.slug;
   const [activeTab, setActiveTab] = useState<'orderbook' | 'positions' | 'orders' | 'resolution'>('orderbook');
-  
+  const { address } = useAccount();
+
+  // Query for Market Data
   const { data: market, isLoading, error, refetch } = useQuery({
     queryKey: ['market', marketId],
     queryFn: async () => {
@@ -51,7 +54,37 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [market, refetch]);
+  }, [marketId, refetch]);
+
+  // Query for Open Orders
+  const { data: openOrders } = useQuery({
+    queryKey: ['openOrders', marketId, address],
+    queryFn: async () => {
+      if (!address) return [];
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('market_id', marketId)
+        .eq('wallet_address', address)
+        .eq('status', 'PENDING');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!address && !!marketId
+  });
+
+  // Query for Positions
+  const { data: positions } = useQuery({
+    queryKey: ['portfolio', address, marketId],
+    queryFn: async () => {
+      if (!address) return null;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${apiUrl}/api/portfolio/${address}`);
+      const json = await res.json();
+      return json.positions?.find((p: any) => p.marketId === marketId) || null;
+    },
+    enabled: !!address && !!marketId
+  });
 
   if (isLoading) {
     return (
@@ -203,14 +236,52 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 )}
 
                 {activeTab === 'positions' && (
-                  <div className="text-sm text-muted text-center py-8">
-                    No positions found for this market.
+                  <div className="py-4 text-sm">
+                    {!address ? (
+                      <div className="text-center text-muted py-8">Please connect wallet to view positions.</div>
+                    ) : !positions ? (
+                      <div className="text-center text-muted py-8">No positions found for this market.</div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-4 border border-border p-4 rounded-lg bg-card text-center">
+                         <div>
+                           <div className="text-muted text-xs mb-1">YES Shares</div>
+                           <div className="text-yes font-mono text-lg">{positions.yesShares}</div>
+                         </div>
+                         <div>
+                           <div className="text-muted text-xs mb-1">NO Shares</div>
+                           <div className="text-no font-mono text-lg">{positions.noShares}</div>
+                         </div>
+                         <div>
+                           <div className="text-muted text-xs mb-1">Total Invested</div>
+                           <div className="font-mono text-lg">${positions.totalInvested.toFixed(2)}</div>
+                         </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {activeTab === 'orders' && (
-                  <div className="text-sm text-muted text-center py-8">
-                    No open orders found.
+                  <div className="py-4">
+                    {!address ? (
+                      <div className="text-center text-sm text-muted py-8">Please connect wallet to view open orders.</div>
+                    ) : !openOrders || openOrders.length === 0 ? (
+                      <div className="text-center text-sm text-muted py-8">No open orders found.</div>
+                    ) : (
+                      <div className="flex flex-col gap-2 font-mono text-sm">
+                        <div className="grid grid-cols-[80px_1fr_100px] text-xs text-muted pb-2 border-b border-border">
+                          <div>Side</div>
+                          <div className="text-right">Shares</div>
+                          <div className="text-right">Price</div>
+                        </div>
+                        {openOrders.map(order => (
+                          <div key={order.id} className="grid grid-cols-[80px_1fr_100px] py-2 border-b border-border/30">
+                            <div className={order.side === 'YES' ? 'text-yes font-bold' : 'text-no font-bold'}>{order.side}</div>
+                            <div className="text-right">{order.amount}</div>
+                            <div className="text-right">{order.price / 100}¢</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

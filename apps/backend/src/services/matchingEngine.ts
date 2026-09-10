@@ -36,12 +36,13 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
                     console.log(`[Matching Engine] Found match! Buy: ${buy.id} Sell: ${sell.id}`);
                     
                     try {
-                        const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+                        const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
                         const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001', provider);
                         const exchange = new ethers.Contract(process.env.EXCHANGE_ADDRESS || '0x', EXCHANGE_ABI, relayer);
 
                         // If we have full raw orders, execute on-chain
                         if (buy.raw_order && sell.raw_order && process.env.RELAYER_PRIVATE_KEY) {
+                            console.log(`[Matching Engine] Relaying to contract ${process.env.EXCHANGE_ADDRESS} ...`);
                             // In this MVP, we map "NO" to isBuy=false (SELL YES) for the contract
                             const sellRaw = { ...sell.raw_order, isBuy: false }; 
 
