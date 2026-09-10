@@ -1,9 +1,33 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import LightRays from '@/components/LightRays';
 import GlassSurface from '@/components/GlassSurface';
 
+// EDGE Protocol Contract Address (CA)
+const EDGE_CA = process.env.NEXT_PUBLIC_EDGE_CA!;
+
 export const LandingHero = () => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCA = async () => {
+    try {
+      await navigator.clipboard.writeText(EDGE_CA);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = EDGE_CA;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   return (
     <section className="relative pt-36 pb-20 px-6 flex flex-col items-center overflow-hidden">
       {/* LightRays Background */}
@@ -25,6 +49,24 @@ export const LandingHero = () => {
       </div>
 
       <div className="text-center max-w-3xl mx-auto mb-14 mt-10 relative z-10">
+        {/* Contract Address (CA) - Click to Copy */}
+        <button
+          onClick={handleCopyCA}
+          className="mb-6 flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full px-4 py-2 mx-auto transition-all duration-200 group cursor-pointer"
+          title="Click to copy Contract Address"
+        >
+          <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider">CA</span>
+          <span className="text-[12px] text-white/70 font-mono group-hover:text-white transition-colors">
+            {EDGE_CA}
+          </span>
+          {copied ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 group-hover:text-white/60 transition-colors"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          )}
+          {copied && <span className="text-[10px] text-emerald-400 font-medium">Copied!</span>}
+        </button>
+
         <h1 className="text-[52px] md:text-[68px] font-semibold tracking-[-0.03em] leading-[1.05] mb-6">
           Predict the Future <br /> With EDGE.
         </h1>
