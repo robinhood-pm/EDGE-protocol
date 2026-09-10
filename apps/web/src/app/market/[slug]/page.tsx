@@ -247,15 +247,26 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
               <ResponsiveContainer width="100%" height="100%">
                 {(() => {
                   const rawData = tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData;
-                  // Sort by time and ensure the last point is always "now"
-                  const sorted = [...(rawData || [])].sort((a: any, b: any) => new Date(a.time).getTime() - new Date(b.time).getTime());
-                  const latestPrice = sorted.length > 0 ? sorted[sorted.length - 1].price : market.currentPrice;
-                  const now = new Date().toISOString();
-                  // Add a "now" point if the last data point isn't recent
-                  const data = sorted.length > 0 ? [...sorted, { time: now, price: latestPrice }] : sorted;
-                  const lastPoint = data?.[data.length - 1];
+                  const data = [...(rawData || [])];
+                  const totalPoints = data.length;
+                  const lastPoint = totalPoints > 0 ? data[totalPoints - 1] : null;
+
+                  // Custom dot: only render on the LAST data point
+                  const renderDot = (props: any) => {
+                    const { cx, cy, index } = props;
+                    if (index !== totalPoints - 1) return null;
+                    return (
+                      <g>
+                        <circle cx={cx} cy={cy} r={4} fill="#10b981" stroke="#1c1c1c" strokeWidth={2} />
+                        <text x={cx + 10} y={cy + 4} fill="#10b981" fontWeight="bold" fontSize={12} className="animate-pulse">
+                          {lastPoint ? `${Number(lastPoint.price).toFixed(1)}¢` : ''}
+                        </text>
+                      </g>
+                    );
+                  };
+
                   return (
-                    <AreaChart data={data} margin={{ top: 10, right: 40, left: 0, bottom: 0 }}>
+                    <AreaChart data={data} margin={{ top: 10, right: 50, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -270,25 +281,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                         itemStyle={{ color: '#fff' }}
                         formatter={(value: any) => [`${Number(value).toFixed(1)}¢`, 'Price']}
                       />
-                      <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
-                      {lastPoint && (
-                        <ReferenceDot 
-                          x={lastPoint.time} 
-                          y={lastPoint.price} 
-                          r={4} 
-                          fill="#10b981" 
-                          stroke="#1c1c1c" 
-                          strokeWidth={2}
-                        >
-                          <Label 
-                            value={`${Number(lastPoint.price).toFixed(1)}¢`} 
-                            position="right" 
-                            fill="#10b981" 
-                            fontWeight="bold"
-                            className="animate-pulse"
-                          />
-                        </ReferenceDot>
-                      )}
+                      <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" dot={renderDot} isAnimationActive={false} />
                     </AreaChart>
                   );
                 })()}
