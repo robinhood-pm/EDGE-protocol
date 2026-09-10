@@ -13,12 +13,14 @@ app.use(express.json());
 import marketRoutes from './routes/market.routes';
 import orderRoutes from './routes/order.routes';
 import logRoutes from './routes/log.routes';
+import portfolioRoutes from './routes/portfolio.routes';
 import userRoutes from './routes/user.routes';
 
 // Routes
 app.use('/api/markets', marketRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/users', userRoutes);
 
 app.get('/health', (req, res) => {

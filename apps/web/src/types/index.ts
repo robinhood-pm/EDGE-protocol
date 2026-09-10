@@ -7,7 +7,9 @@ export interface MarketOption {
 export interface Market {
   id: string;
   title: string;
+  slug?: string;
   category: string;
+  description: string;
   image: string;
   yesProbability: number;
   noProbability: number;

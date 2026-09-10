@@ -1,186 +1,100 @@
 "use client";
 
-import React, { useState } from 'react';
-import { TrendingUp, ArrowDownRight, Wallet, History, BarChart3, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/atoms/Button';
-import { Header } from '@/components/organisms/Header';
-
-import portfolioData from '@/data/portfolio.json';
-
-const { openPositions, resolvedPositions } = portfolioData;
+import React from 'react';
+import { useAccount } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Briefcase, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PortfolioPage() {
-  const [activeTab, setActiveTab] = useState<'open' | 'history'>('open');
-  
-  // Calculate Summary
-  const totalPositionValue = openPositions.reduce((acc, pos) => acc + pos.totalValue, 0);
-  const totalPnL = openPositions.reduce((acc, pos) => acc + pos.pnlValue, 0);
-  const claimableWinnings = resolvedPositions.filter(p => p.status === 'WON' && !p.claimed).reduce((acc, pos) => acc + pos.claimableAmount, 0);
-  
-  const cashBalance = 12450.00;
-  const totalAccountValue = cashBalance + totalPositionValue;
+  const { address, isConnected } = useAccount();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['portfolio', address],
+    queryFn: async () => {
+      if (!address) return null;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/portfolio/${address}`);
+      if (!res.ok) throw new Error('Failed to fetch portfolio');
+      return res.json();
+    },
+    enabled: !!address,
+  });
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Briefcase className="w-16 h-16 text-muted mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Connect Wallet</h1>
+        <p className="text-muted">Please connect your wallet to view your portfolio.</p>
+      </div>
+    );
+  }
+
+  const positions = data?.positions || [];
+  const totalInvested = positions.reduce((acc: number, pos: any) => acc + pos.totalInvested, 0);
 
   return (
-    <main className="min-h-screen flex flex-col">
-      <Header />
-      <div className="container max-w-screen-xl mx-auto px-4 py-8 mt-6">
-        <div className="flex flex-col md:flex-row gap-8">
-          
-          {/* LEFT COLUMN: Summary & Navigation */}
-        <div className="w-full md:w-1/3 flex flex-col gap-6">
-          
-          {/* Account Value Card */}
-          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
-            <h2 className="text-muted text-sm font-medium mb-2">Total Account Value</h2>
-            <div className="text-4xl font-semibold mb-4 tracking-tight">
-              ${totalAccountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            
-            <div className="flex flex-col gap-3 mt-6 pt-6 border-t border-border">
-              <div className="flex justify-between items-center">
-                <span className="text-muted text-sm flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" /> Open Positions
-                </span>
-                <span className="font-medium">${totalPositionValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted text-sm flex items-center gap-2">
-                  <Wallet className="w-4 h-4" /> Cash Balance
-                </span>
-                <span className="font-medium">${cashBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <Link href="/" className="inline-flex items-center text-sm font-medium text-muted hover:text-foreground mb-6 transition-colors">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Markets
+      </Link>
 
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <Button className="w-full bg-[#594EE6] text-white hover:bg-[#483ecd]">Deposit</Button>
-              <Button variant="outline" className="w-full">Withdraw</Button>
-            </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex flex-col gap-1">
-            <button 
-              onClick={() => setActiveTab('open')}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${activeTab === 'open' ? 'bg-white/5 text-foreground font-medium' : 'text-muted hover:bg-white/5 hover:text-foreground'}`}
-            >
-              <span className="flex items-center gap-3"><BarChart3 className="w-5 h-5" /> Open Positions</span>
-              <span className="bg-white/10 text-xs px-2 py-0.5 rounded-full">{openPositions.length}</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('history')}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${activeTab === 'history' ? 'bg-white/5 text-foreground font-medium' : 'text-muted hover:bg-white/5 hover:text-foreground'}`}
-            >
-              <span className="flex items-center gap-3"><History className="w-5 h-5" /> History</span>
-            </button>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Content */}
-        <div className="flex-1 flex flex-col gap-4">
-          
-          {/* OPEN POSITIONS TAB */}
-          {activeTab === 'open' && (
-            <>
-              <div className="flex justify-between items-end mb-2">
-                <h2 className="text-xl font-semibold">Active Predictions</h2>
-                <div className="text-sm text-muted">
-                  Unrealized PnL: 
-                  <span className={`ml-2 font-medium ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {totalPnL >= 0 ? '+' : '-'}${Math.abs(totalPnL).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              {openPositions.map((pos) => (
-                <div key={pos.id} className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 transition-all hover:bg-white/10 hover:border-white/20">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${pos.outcome === 'YES' ? 'bg-yes/10 text-yes' : 'bg-no/10 text-no'}`}>
-                          {pos.outcome}
-                        </span>
-                        <span className="text-xs text-muted">Shares: {pos.shares.toLocaleString()}</span>
-                      </div>
-                      <h3 className="text-lg font-semibold">{pos.title}</h3>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-semibold">${pos.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                      <div className={`text-sm flex items-center justify-end gap-1 mt-1 ${pos.pnlValue >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {pos.pnlValue >= 0 ? <TrendingUp className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        {pos.pnlValue >= 0 ? '+' : ''}{pos.pnlPercent}%
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
-                    <div>
-                      <div className="text-xs text-muted mb-1">Avg Buy Price</div>
-                      <div className="text-sm font-medium">{pos.avgBuyPrice * 100}¢</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted mb-1">Current Price</div>
-                      <div className="text-sm font-medium">{Math.round(pos.currentPrice * 100)}¢</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted mb-1">Est. Payout if Won</div>
-                      <div className="text-sm font-medium">${pos.shares.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                    </div>
-                    <div className="flex justify-end items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-8">Trade</Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* HISTORY / RESOLVED TAB */}
-          {activeTab === 'history' && (
-            <>
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold">Past Predictions</h2>
-                {claimableWinnings > 0 && (
-                  <Button className="bg-green-500 hover:bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                    Claim ${claimableWinnings.toLocaleString()} Winnings
-                  </Button>
-                )}
-              </div>
-
-              {resolvedPositions.map((pos) => (
-                <div key={pos.id} className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 opacity-80 hover:opacity-100 transition-all hover:bg-white/10">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${pos.status === 'WON' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                          {pos.status}
-                        </span>
-                        <span className="text-xs text-muted">Bet {pos.outcome} • {pos.shares.toLocaleString()} Shares</span>
-                      </div>
-                      <h3 className="text-lg font-semibold">{pos.title}</h3>
-                    </div>
-                    <div className="text-right">
-                      {pos.status === 'WON' ? (
-                        <>
-                          <div className="text-xl font-semibold text-green-500">+${pos.claimableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                          {!pos.claimed && <div className="text-xs text-green-400 mt-1 flex items-center justify-end gap-1"><CheckCircle2 className="w-3 h-3" /> Ready to Claim</div>}
-                          {pos.claimed && <div className="text-xs text-muted mt-1">Claimed</div>}
-                        </>
-                      ) : (
-                        <>
-                          <div className="text-xl font-semibold text-red-500">-$0.00</div>
-                          <div className="text-xs text-muted mt-1">Expired Worthless</div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 tracking-tight">Your Portfolio</h1>
+          <p className="text-muted">Manage your active positions and history.</p>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="text-sm font-medium text-muted mb-1 flex items-center">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Total Value
+          </div>
+          <div className="text-2xl font-bold">${totalInvested.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <h2 className="text-xl font-bold mb-4">Active Positions</h2>
+      
+      {isLoading ? (
+        <div className="text-center py-12 text-muted animate-pulse">Loading positions...</div>
+      ) : error ? (
+        <div className="text-center py-12 text-red-500 bg-red-500/10 rounded-xl">Error loading portfolio</div>
+      ) : positions.length === 0 ? (
+        <div className="text-center py-16 bg-card border border-border rounded-xl">
+          <p className="text-muted mb-4">You don't have any active positions yet.</p>
+          <Link href="/" className="inline-block px-4 py-2 bg-foreground text-background font-medium rounded hover:bg-neutral-300 transition-colors">
+            Explore Markets
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {positions.map((pos: any) => (
+            <div key={pos.marketId} className="bg-card border border-border rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:border-neutral-700">
+              <div className="flex items-center gap-4">
+                <img src={pos.marketImage} alt={pos.marketTitle} className="w-12 h-12 rounded object-cover" />
+                <div>
+                  <h3 className="font-bold">{pos.marketTitle}</h3>
+                  <div className="text-sm text-muted mt-1">Invested: ${pos.totalInvested.toFixed(2)}</div>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <div className="text-xs text-muted font-medium mb-1 uppercase tracking-wider">YES Shares</div>
+                  <div className="font-bold text-yes">{pos.yesShares}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-muted font-medium mb-1 uppercase tracking-wider">NO Shares</div>
+                  <div className="font-bold text-no">{pos.noShares}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-    </main>
   );
 }

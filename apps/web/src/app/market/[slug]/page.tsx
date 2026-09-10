@@ -16,9 +16,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function MarketPage({ params }: { params: Promise<{ id: string }> }) {
+export default function MarketPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
-  const marketId = resolvedParams.id;
+  const marketId = resolvedParams.slug;
   
   const { data: market, isLoading, error, refetch } = useQuery({
     queryKey: ['market', marketId],

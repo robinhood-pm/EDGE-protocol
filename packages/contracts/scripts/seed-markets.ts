@@ -70,12 +70,18 @@ async function main() {
 
     // 4. Sync off-chain to Supabase via Backend API
     try {
+      // Generate slug from title
+      const slug = market.title.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+
       const response = await fetch(`${backendUrl}/api/markets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: marketId,
           title: market.title,
+          slug: slug,
           description: market.description,
           image_url: market.image_url,
           resolution_rules: market.resolution_rules,

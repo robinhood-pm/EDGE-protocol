@@ -7,8 +7,9 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { parseUnits, formatUnits } from 'viem';
 import { toast } from 'react-hot-toast';
 import { CONTRACT_ADDRESSES, ABIS } from '@/lib/contracts';
-import { MarketDetail } from '@/types';
 import { logActivity } from '@/lib/logger';
+import { useQuery } from '@tanstack/react-query';
+import { MarketDetail } from '@/types';
 
 interface TradePanelProps {
   market: MarketDetail;
@@ -19,6 +20,18 @@ export function TradePanel({ market }: TradePanelProps) {
   const [amountStr, setAmountStr] = useState<string>('5');
   const [selectedOutcome, setSelectedOutcome] = useState<0 | 1>(1); // 1 = YES/UP, 0 = NO/DOWN
   const amountToSpend = parseUnits(amountStr || '0', 6);
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  
+  // Fetch Orderbook
+  const { data: orderbookData } = useQuery({
+    queryKey: ['orderbook', market.id],
+    queryFn: async () => {
+      const response = await fetch(`${backendUrl}/api/orders/${market.id}`);
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      return response.json();
+    },
+    refetchInterval: 3000 // Poll every 3 seconds for now
+  });
   
   // Read USDG Balance
   const { data: balanceData } = useReadContract({
@@ -86,12 +99,17 @@ export function TradePanel({ market }: TradePanelProps) {
         ]
       };
 
+      // Math: price in 6 decimals, amount is number of shares in 6 decimals
+      const priceNum = selectedOutcome === 1 ? market.currentPrice : (1 - market.currentPrice);
+      const priceContract = BigInt(Math.floor(priceNum * 1000000));
+      const sharesContract = (amountToSpend * BigInt(1000000)) / priceContract;
+
       const order = {
         maker: address,
         marketId: BigInt(market.id),
         outcome,
-        amount: amountToSpend,
-        price: amountToSpend,
+        amount: sharesContract, // Number of shares
+        price: priceContract, // Price per share
         isBuy: true,
         nonce: BigInt(Math.floor(Math.random() * 1000000)),
         expiration: BigInt(Math.floor(Date.now() / 1000) + 3600)
@@ -118,18 +136,16 @@ export function TradePanel({ market }: TradePanelProps) {
         expiration: order.expiration.toString()
       };
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-      
       const response = await fetch(`${backendUrl}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           market_id: market.id,
           wallet_address: address,
-          side: 'BUY',
+          side: selectedOutcome === 1 ? 'YES' : 'NO',
           order_type: 'LIMIT',
-          amount: amountToSpend.toString(),
-          price: amountToSpend.toString(),
+          amount: Number(formatUnits(sharesContract, 6)),
+          price: priceNum,
           signature: signature,
           rawOrder: rawOrderForBackend
         })
@@ -236,6 +252,31 @@ export function TradePanel({ market }: TradePanelProps) {
         <div className="flex justify-between items-center text-sm font-medium pt-4 border-t border-border">
           <span className="text-muted">Balance</span>
           <span>{Number(formatUnits(balance, 6)).toFixed(2)} USDG</span>
+        </div>
+
+        {/* Simple Orderbook View */}
+        <div className="mt-6 border-t border-border pt-4">
+          <h3 className="text-sm font-bold mb-3">Live Orderbook</h3>
+          <div className="flex justify-between text-xs text-muted mb-2">
+            <span>Side</span>
+            <span>Price</span>
+            <span>Shares</span>
+          </div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {orderbookData?.orders?.length > 0 ? (
+              orderbookData.orders.map((o: any) => (
+                <div key={o.id} className="flex justify-between text-xs">
+                  <span className={o.side === 'YES' ? 'text-yes' : 'text-no'}>
+                    BUY {o.side}
+                  </span>
+                  <span>{o.price} ¢</span>
+                  <span>{Number(o.amount).toFixed(2)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-center text-muted">No pending orders.</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

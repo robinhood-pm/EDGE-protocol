@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.markets (
     id TEXT, -- Usually matches the onchain questionId
     network TEXT, -- 'TESTNET' or 'MAINNET'
     title TEXT NOT NULL,
+    slug TEXT UNIQUE,
     description TEXT,
     image_url TEXT,
     resolution_rules TEXT,
@@ -48,6 +49,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
     signature TEXT NOT NULL, -- EIP-712 Signature
     status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, FILLED, PARTIALLY_FILLED, CANCELLED
     filled_amount NUMERIC DEFAULT 0,
+    raw_order JSONB, -- The EIP-712 payload needed for matching
+    transaction_hash TEXT, -- To track the onchain settlement
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (id),

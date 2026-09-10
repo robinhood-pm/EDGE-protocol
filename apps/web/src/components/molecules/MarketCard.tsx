@@ -17,8 +17,8 @@ export function MarketCard({ market }: MarketCardProps) {
   };
 
   return (
-    <Link href={`/market/${market.id}`} className="block group">
-      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all h-full flex flex-col">
+    <Link href={`/market/${market.slug || market.id}`} className="block group">
+      <div className="bg-card rounded-2xl border border-border p-4 hover:border-neutral-700 transition-colors cursor-pointer h-full flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-start gap-3">

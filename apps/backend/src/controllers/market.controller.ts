@@ -22,6 +22,7 @@ export const getMarkets = async (req: Request, res: Response) => {
     const formattedMarkets = data.map(market => ({
       id: market.id,
       title: market.title,
+      slug: market.slug,
       image: market.image_url || 'https://via.placeholder.com/150',
       status: market.status === 'OPEN' ? 'Live' : market.status,
       totalVolume: Number(market.total_volume_usdg),
@@ -40,12 +41,21 @@ export const getMarketById = async (req: Request, res: Response) => {
     const network = process.env.NETWORK || 'TESTNET';
 
     // 1. Fetch Market Detail
-    const { data: marketData, error: marketError } = await supabase
+    let query = supabase
       .from('markets')
       .select('*')
-      .eq('id', id)
-      .eq('network', network)
-      .single();
+      .eq('network', network);
+
+    const idStr = Array.isArray(id) ? id[0] : id;
+
+    // If id contains only numbers, check by ID, else check by slug
+    if (/^\d+$/.test(idStr || '')) {
+      query = query.eq('id', idStr);
+    } else {
+      query = query.eq('slug', idStr);
+    }
+
+    const { data: marketData, error: marketError } = await query.single();
 
     if (marketError || !marketData) {
       return res.status(404).json({ error: 'Market not found' });
@@ -55,7 +65,7 @@ export const getMarketById = async (req: Request, res: Response) => {
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
       .select('*')
-      .eq('market_id', id)
+      .eq('market_id', marketData.id)
       .eq('network', network)
       .in('status', ['PENDING', 'PARTIALLY_FILLED']);
 
@@ -132,7 +142,7 @@ export const getMarketById = async (req: Request, res: Response) => {
 
 export const createMarket = async (req: Request, res: Response) => {
   try {
-    const { id, title, description, image_url, resolution_rules, close_time, resolver_address } = req.body;
+    const { id, title, slug, description, image_url, resolution_rules, close_time, resolver_address } = req.body;
     const network = process.env.NETWORK || 'TESTNET';
 
     if (!id || !title || !close_time || !resolver_address) {
@@ -146,6 +156,7 @@ export const createMarket = async (req: Request, res: Response) => {
           id: id.toString(),
           network,
           title,
+          slug,
           description,
           image_url,
           resolution_rules,

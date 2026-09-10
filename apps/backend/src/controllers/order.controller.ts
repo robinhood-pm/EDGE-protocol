@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 import { verifyTypedData } from 'ethers';
 import * as dotenv from 'dotenv';
+import { matchOrdersAsync } from '../services/matchingEngine';
 dotenv.config();
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -51,6 +52,7 @@ export const createOrder = async (req: Request, res: Response) => {
           amount,
           price,
           signature,
+          raw_order: rawOrder,
           status: 'PENDING'
         }
       ])
@@ -60,7 +62,10 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(500).json({ error: error.message });
     }
 
-    // Trigger order matching engine (offchain CLOB matching) here...
+    // Trigger order matching engine asynchronously
+    setTimeout(() => {
+        matchOrdersAsync(market_id, process.env.NETWORK || 'TESTNET');
+    }, 0);
 
     res.status(201).json({ order: data[0] });
   } catch (err: any) {
@@ -84,6 +89,29 @@ export const cancelOrder = async (req: Request, res: Response) => {
     }
 
     res.json({ message: 'Order cancelled', order: data[0] });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getMarketOrders = async (req: Request, res: Response) => {
+  try {
+    const { marketId } = req.params;
+    const network = process.env.NETWORK || 'TESTNET';
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('market_id', marketId)
+      .eq('network', network)
+      .in('status', ['PENDING', 'PARTIALLY_FILLED'])
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ orders: data });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
