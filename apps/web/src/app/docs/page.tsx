@@ -14,7 +14,7 @@ export default function DocsPage() {
           <div className="sticky top-28">
             <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Introduction</h3>
             <ul className="space-y-3 mb-8">
-              <li><a href="#overview" className="text-sm text-indigo-400 font-medium">Overview</a></li>
+              <li><a href="#overview" className="text-sm text-white font-medium">Overview</a></li>
               <li><a href="#robinhood-chain" className="text-sm text-white/60 hover:text-white transition-colors">Robinhood Chain</a></li>
               <li><a href="#core-concepts" className="text-sm text-white/60 hover:text-white transition-colors">Core Concepts</a></li>
             </ul>
@@ -37,7 +37,7 @@ export default function DocsPage() {
 
         {/* Main Content */}
         <main className="flex-1 md:pl-10 max-w-3xl">
-          <div className="inline-flex px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-[11px] font-medium text-indigo-400 mb-6">
+          <div className="inline-flex px-3 py-1 rounded-full border border-white/30 bg-white/10 text-[11px] font-medium text-neutral-300 mb-6">
             Documentation
           </div>
           
@@ -79,7 +79,7 @@ export default function DocsPage() {
               Our contracts are based on the battle-tested ERC-1155 Conditional Tokens framework.
             </p>
             <div className="bg-black/50 border border-white/5 rounded-xl p-6 overflow-x-auto">
-              <pre className="text-xs text-indigo-300 font-mono">
+              <pre className="text-xs text-neutral-300 font-mono">
 {`interface IConditionalTokens {
     function prepareCondition(
         address oracle, 

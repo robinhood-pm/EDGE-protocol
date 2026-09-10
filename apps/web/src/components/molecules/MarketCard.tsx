@@ -17,14 +17,14 @@ export function MarketCard({ market }: MarketCardProps) {
   };
 
   return (
-    <Link href={`/market/${market.slug || market.id}`} className="block group h-full">
-      <div className="relative bg-black rounded-2xl border border-border overflow-hidden hover:border-neutral-700 transition-colors cursor-pointer h-full flex flex-col">
+    <Link href={`/market/${market.slug || market.id}`} className="block group h-full focus:outline-none focus:ring-1 focus:ring-white/20 rounded-2xl">
+      <div className="relative bg-[#070709] rounded-2xl border border-white/10 overflow-hidden hover:border-white/30 transition-colors cursor-pointer h-full flex flex-col">
         {/* Background Image Overlay */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20 blur-md group-hover:scale-110 group-hover:opacity-30 transition-all duration-500"
+          className="absolute inset-0 bg-cover bg-center opacity-40 blur-sm group-hover:scale-110 group-hover:opacity-60 transition-all duration-500"
           style={{ backgroundImage: `url(${market.image})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070709] via-[#070709]/80 to-[#070709]/20" />
 
         {/* Card Content */}
         <div className="relative z-10 p-4 flex flex-col h-full">
