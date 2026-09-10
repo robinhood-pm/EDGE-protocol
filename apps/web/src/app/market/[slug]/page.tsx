@@ -10,6 +10,7 @@ import { Share, Settings, Settings2, Loader2 } from 'lucide-react';
 import { MarketDetail } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Setup Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -19,6 +20,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function MarketPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
   const marketId = resolvedParams.slug;
+  const [activeTab, setActiveTab] = useState<'orderbook' | 'positions' | 'orders' | 'resolution'>('orderbook');
   
   const { data: market, isLoading, error, refetch } = useQuery({
     queryKey: ['market', marketId],
@@ -86,7 +88,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs text-muted font-medium">
-                    <span>Sep 9, 10:15 AM – 10:30AM</span>
+                    <span>{market.closeTimeFormatted}</span>
                     <span>Total Vol ${market.totalVolume.toLocaleString()}</span>
                     {market.status === 'Live' && (
                       <span className="flex items-center gap-1 text-red-500">
@@ -112,7 +114,9 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 </div>
                 <div>
                   <div className="text-sm text-muted mb-1 flex items-center gap-1">
-                    Current Price <span className="text-no flex items-center">▼ {Math.abs(market.priceChangePercent)}%</span>
+                    Current Price <span className={market.priceChangePercent >= 0 ? 'text-yes' : 'text-no'}>
+                      {market.priceChangePercent >= 0 ? '▲' : '▼'} {Math.abs(market.priceChangePercent)}%
+                    </span>
                   </div>
                   <div className="text-xl font-bold text-no flex items-center gap-2">
                     ${market.currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}
@@ -126,71 +130,98 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
               </div>
             </div>
 
-            {/* Chart Area (Placeholder) */}
+            {/* Chart Area */}
             <div className="h-80 w-full relative">
-              <div className="absolute left-0 bottom-12 w-full flex flex-col gap-4 text-xs font-mono text-muted">
-                <div className="flex justify-between items-center border-b border-border/50 border-dashed pb-1">
-                  <span className="text-yes">+$6</span> <span>$78,595</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-border/50 border-dashed pb-1">
-                  <span className="text-yes">+$3</span> <span>$78,592</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-muted border-dashed pb-1">
-                  <span className="text-yes">+$2</span> 
-                  <span className="bg-muted text-background px-1.5 rounded">Target</span>
-                </div>
-              </div>
-              {/* Fake chart line */}
-              <svg className="w-full h-full absolute inset-0 z-10" preserveAspectRatio="none">
-                <path d="M0,150 L200,150 L250,80 L350,80 L400,120 L800,120 L900,120" fill="none" stroke="currentColor" strokeWidth="2" className="text-no" />
-                <circle cx="800" cy="120" r="4" className="fill-no" />
-              </svg>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={market.chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="time" hide />
+                  <YAxis domain={['dataMin - 10', 'dataMax + 10']} hide />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #333' }}
+                    labelStyle={{ color: '#888' }}
+                    itemStyle={{ color: '#fff' }}
+                    formatter={(value: any) => [`${value}¢`, 'Price']}
+                  />
+                  <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Tabs & Orderbook */}
             <div>
               <div className="flex border-b border-border gap-6">
-                <button className="px-1 py-3 text-sm font-medium border-b-2 border-foreground text-foreground">Order Book</button>
-                <button className="px-1 py-3 text-sm font-medium text-muted hover:text-foreground">My Positions</button>
-                <button className="px-1 py-3 text-sm font-medium text-muted hover:text-foreground">Open Orders</button>
-                <button className="px-1 py-3 text-sm font-medium text-muted hover:text-foreground">Resolution</button>
+                <button onClick={() => setActiveTab('orderbook')} className={`px-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'orderbook' ? 'border-foreground text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}>Order Book</button>
+                <button onClick={() => setActiveTab('positions')} className={`px-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'positions' ? 'border-foreground text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}>My Positions</button>
+                <button onClick={() => setActiveTab('orders')} className={`px-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'orders' ? 'border-foreground text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}>Open Orders</button>
+                <button onClick={() => setActiveTab('resolution')} className={`px-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'resolution' ? 'border-foreground text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}>Resolution</button>
               </div>
               
               <div className="py-6">
-                <div className="grid grid-cols-[100px_1fr_100px] gap-4 text-xs font-medium text-muted mb-4 border-b border-border pb-2">
-                  <div>Price</div>
-                  <div className="text-right">Shares</div>
-                  <div className="text-right">Total</div>
-                </div>
-                
-                {/* Asks (NO) */}
-                <div className="flex flex-col gap-1 mb-6 text-sm font-mono">
-                  {market.orderBook.asks.slice().reverse().map((ask, i) => (
-                    <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
-                      <div className="absolute top-0 right-0 h-full bg-no/10" style={{width: `${(ask.total / 150) * 100}%`}} />
-                      <div className="text-no z-10">{ask.price}¢</div>
-                      <div className="text-right z-10">{ask.shares}</div>
-                      <div className="text-right z-10">${ask.total.toFixed(2)}</div>
+                {activeTab === 'orderbook' && (
+                  <>
+                    <div className="grid grid-cols-[100px_1fr_100px] gap-4 text-xs font-medium text-muted mb-4 border-b border-border pb-2">
+                      <div>Price</div>
+                      <div className="text-right">Shares</div>
+                      <div className="text-right">Total</div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-between items-center text-xs text-muted my-2 border-y border-border py-2">
-                  <span>Last: 36¢</span>
-                  <span>Spread: 1¢</span>
-                </div>
-
-                {/* Bids (YES) */}
-                <div className="flex flex-col gap-1 text-sm font-mono">
-                  {market.orderBook.bids.map((bid, i) => (
-                    <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
-                      <div className="absolute top-0 right-0 h-full bg-yes/10" style={{width: `${(bid.total / 150) * 100}%`}} />
-                      <div className="text-yes z-10">{bid.price}¢</div>
-                      <div className="text-right z-10">{bid.shares}</div>
-                      <div className="text-right z-10">${bid.total.toFixed(2)}</div>
+                    
+                    {/* Asks (NO) */}
+                    <div className="flex flex-col gap-1 mb-6 text-sm font-mono">
+                      {market.orderBook.asks.slice().reverse().map((ask, i) => (
+                        <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
+                          <div className="absolute top-0 right-0 h-full bg-no/10" style={{width: `${(ask.total / 150) * 100}%`}} />
+                          <div className="text-no z-10">{ask.price}¢</div>
+                          <div className="text-right z-10">{ask.shares}</div>
+                          <div className="text-right z-10">${ask.total.toFixed(2)}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="flex justify-between items-center text-xs text-muted my-2 border-y border-border py-2">
+                      <span>Last: {Math.round(market.currentPrice * 100)}¢</span>
+                      <span>Spread: {market.orderBook.asks[0]?.price && market.orderBook.bids[0]?.price ? `${market.orderBook.asks[0].price - market.orderBook.bids[0].price}¢` : 'N/A'}</span>
+                    </div>
+
+                    {/* Bids (YES) */}
+                    <div className="flex flex-col gap-1 text-sm font-mono">
+                      {market.orderBook.bids.map((bid, i) => (
+                        <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
+                          <div className="absolute top-0 right-0 h-full bg-yes/10" style={{width: `${(bid.total / 150) * 100}%`}} />
+                          <div className="text-yes z-10">{bid.price}¢</div>
+                          <div className="text-right z-10">{bid.shares}</div>
+                          <div className="text-right z-10">${bid.total.toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'positions' && (
+                  <div className="text-sm text-muted text-center py-8">
+                    No positions found for this market.
+                  </div>
+                )}
+
+                {activeTab === 'orders' && (
+                  <div className="text-sm text-muted text-center py-8">
+                    No open orders found.
+                  </div>
+                )}
+
+                {activeTab === 'resolution' && (
+                  <div className="text-sm text-muted py-4">
+                    <p>Market resolution rules dictate how the market will be settled.</p>
+                    <div className="mt-4 p-4 bg-card border border-border rounded-lg text-foreground/80">
+                      {market.resolutionRules}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

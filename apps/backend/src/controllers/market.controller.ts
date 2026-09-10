@@ -112,6 +112,59 @@ export const getMarketById = async (req: Request, res: Response) => {
       total: Number(price) * asksMap[Number(price)] * 100
     })).sort((a, b) => a.price - b.price);
 
+    // Time calculations
+    const closeTime = new Date(marketData.close_time);
+    const now = new Date();
+    let timeLeftStr = 'Ended';
+    if (closeTime > now) {
+      const diffMs = closeTime.getTime() - now.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      if (diffDays > 0) {
+        timeLeftStr = `${diffDays}d ${diffHours}h`;
+      } else if (diffHours > 0) {
+        timeLeftStr = `${diffHours}h ${diffMins}m`;
+      } else {
+        timeLeftStr = `${diffMins}m`;
+      }
+    }
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const closeTimeFormatted = formatter.format(closeTime);
+
+    // Current Price
+    const currentPrice = highestBid > 0 ? highestBid : Number(marketData.current_yes_probability) / 100;
+    const initialPrice = 0.50; // default start
+    const priceChangePercent = ((currentPrice - initialPrice) / initialPrice) * 100;
+
+    // TODO: Saat ini kita belum memiliki tabel trades di database untuk menyimpan history pergerakan harga. Sebagai solusinya, backend akan menyimulasikan data riwayat harga yang bergerak menuju harga riil saat ini (currentPrice) agar grafiknya bisa tampil interaktif dengan Recharts. Nanti, saat Anda mengembangkan sistem indexer on-chain, kita bisa menggantinya dengan data historis sungguhan
+    const chartData = [];
+    const pointsCount = 20;
+    let mockPrice = initialPrice;
+    for (let i = 0; i < pointsCount; i++) {
+      const isLast = i === pointsCount - 1;
+      if (isLast) {
+        mockPrice = currentPrice;
+      } else {
+        // Random walk towards current price
+        const step = (currentPrice - mockPrice) / (pointsCount - i) + (Math.random() - 0.5) * 0.05;
+        mockPrice = Math.max(0.01, Math.min(0.99, mockPrice + step));
+      }
+      
+      const timePoint = new Date(now.getTime() - (pointsCount - i) * 60 * 60 * 1000);
+      chartData.push({
+        time: timePoint.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        price: Math.round(mockPrice * 100)
+      });
+    }
+
     // Format final response to match frontend expectations
     const response = {
       id: marketData.id,
@@ -120,14 +173,16 @@ export const getMarketById = async (req: Request, res: Response) => {
       image: marketData.image_url,
       status: marketData.status === 'OPEN' ? 'Live' : marketData.status,
       totalVolume: Number(marketData.total_volume_usdg),
-      priceToBeat: 0.50, // mock calculation
-      currentPrice: highestBid > 0 ? highestBid : Number(marketData.current_yes_probability) / 100,
-      priceChangePercent: 0,
-      timeLeft: 'N/A', // could be calculated from close_time
+      priceToBeat: initialPrice,
+      currentPrice: currentPrice,
+      priceChangePercent: Math.round(priceChangePercent * 100) / 100,
+      timeLeft: timeLeftStr,
+      closeTimeFormatted: closeTimeFormatted,
       resolutionRules: marketData.resolution_rules || 'No rules specified.',
       rewards: {
         pointsToEarn: 50
       },
+      chartData: chartData,
       orderBook: {
         bids,
         asks

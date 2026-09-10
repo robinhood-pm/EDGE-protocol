@@ -38,6 +38,7 @@ export interface MarketDetail extends Omit<Market, 'yesProbability' | 'noProbabi
   currentPrice: number;
   priceChangePercent: number;
   timeLeft: string;
+  closeTimeFormatted: string;
   chance: number;
   resolutionRules: string;
   chartData: ChartDataPoint[];
