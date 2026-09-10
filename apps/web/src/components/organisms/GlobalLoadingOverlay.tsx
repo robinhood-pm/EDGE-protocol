@@ -42,9 +42,9 @@ export const GlobalLoadingOverlay = () => {
 
         {/* Loading Dots */}
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#594EE6] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 rounded-full bg-[#594EE6] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 rounded-full bg-[#594EE6] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
         
         <span className="text-white/40 text-xs mt-2 uppercase tracking-widest font-mono">Initializing System</span>

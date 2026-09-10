@@ -17,85 +17,95 @@ export function MarketCard({ market }: MarketCardProps) {
   };
 
   return (
-    <Link href={`/market/${market.slug || market.id}`} className="block group">
-      <div className="bg-card rounded-2xl border border-border p-4 hover:border-neutral-700 transition-colors cursor-pointer h-full flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-md bg-neutral-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <img src={market.image} alt={market.title} className="w-6 h-6 object-contain" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 text-foreground group-hover:text-blue-400 transition-colors">
-                {market.title}
-              </h3>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="p-1.5 text-muted hover:text-foreground rounded-md hover:bg-background">
-              <Link2 className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted hover:text-foreground rounded-md hover:bg-background">
-              <Star className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+    <Link href={`/market/${market.slug || market.id}`} className="block group h-full">
+      <div className="relative bg-black rounded-2xl border border-border overflow-hidden hover:border-neutral-700 transition-colors cursor-pointer h-full flex flex-col">
+        {/* Background Image Overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-20 blur-md group-hover:scale-110 group-hover:opacity-30 transition-all duration-500"
+          style={{ backgroundImage: `url(${market.image})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30" />
 
-        {/* Options / Probabilities */}
-        {market.options ? (
-          <div className="flex-1 flex flex-col gap-2 mb-4">
-            {market.options.map((opt, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="text-muted">{opt.label}</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{opt.yesProbability ?? opt.probability}%</span>
-                  <div className="flex gap-1">
-                    <div className="bg-yes/20 text-yes px-2 py-0.5 rounded text-xs font-semibold">YES</div>
-                    <div className="bg-no/20 text-no px-2 py-0.5 rounded text-xs font-semibold">NO</div>
+        {/* Card Content */}
+        <div className="relative z-10 p-4 flex flex-col h-full">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg backdrop-blur-md">
+                <img src={market.image} alt={market.title} className="w-6 h-6 object-contain" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 text-white group-hover:text-white/80 transition-colors">
+                  {market.title}
+                </h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button className="p-1.5 text-white/50 hover:text-white rounded-md hover:bg-white/10">
+                <Link2 className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 text-white/50 hover:text-white rounded-md hover:bg-white/10">
+                <Star className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Options / Probabilities */}
+          {market.options ? (
+            <div className="flex-1 flex flex-col gap-2 mb-4">
+              {market.options.map((opt, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-white/60">{opt.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white">{opt.yesProbability ?? opt.probability}%</span>
+                    <div className="flex gap-1">
+                      <div className="bg-yes/20 text-yes px-2 py-0.5 rounded text-xs font-semibold">YES</div>
+                      <div className="bg-no/20 text-no px-2 py-0.5 rounded text-xs font-semibold">NO</div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col justify-end mb-4">
+              <div className="flex justify-between text-sm font-bold mb-2">
+                <span className="text-yes flex items-center gap-1">
+                  <span className="text-xs">▲</span> {market.yesProbability}%
+                </span>
+                <span className="text-no flex items-center gap-1">
+                  {market.noProbability}% <span className="text-xs">▼</span>
+                </span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col justify-end mb-4">
-            <div className="flex justify-between text-sm font-bold mb-2">
-              <span className="text-yes flex items-center gap-1">
-                <span className="text-xs">▲</span> {market.yesProbability}%
-              </span>
-              <span className="text-no flex items-center gap-1">
-                {market.noProbability}% <span className="text-xs">▼</span>
-              </span>
+              {/* Probability Bar */}
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden flex mb-4 backdrop-blur-sm">
+                <div className="h-full bg-yes" style={{ width: `${market.yesProbability}%` }} />
+                <div className="h-full bg-black/40 w-1" />
+                <div className="h-full bg-no" style={{ width: `${market.noProbability}%` }} />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="yes" className="w-full text-xs h-9">UP {market.yesPrice}¢</Button>
+                <Button variant="no" className="w-full text-xs h-9">DOWN {market.noPrice}¢</Button>
+              </div>
             </div>
-            {/* Probability Bar */}
-            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden flex mb-4">
-              <div className="h-full bg-yes" style={{ width: `${market.yesProbability}%` }} />
-              <div className="h-full bg-black/40 w-1" />
-              <div className="h-full bg-no" style={{ width: `${market.noProbability}%` }} />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="yes" className="w-full text-xs h-9">UP {market.yesPrice}¢</Button>
-              <Button variant="no" className="w-full text-xs h-9">DOWN {market.noPrice}¢</Button>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Footer */}
-        <div className="mt-auto pt-3 flex items-center justify-between text-xs text-muted border-t border-border/50">
-          <div className="flex items-center gap-1">
-            <Badge variant="muted" className="px-1.5 text-[10px]">
-              <span className="text-yellow-500 mr-1">PP</span> ★★★★★
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <span>{formatVolume(market.totalVolume)} Vol</span>
-            {market.status === 'Live' && (
-              <span className="flex items-center gap-1 text-red-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                Live
-              </span>
-            )}
+          {/* Footer */}
+          <div className="mt-auto pt-3 flex items-center justify-between text-xs text-white/50 border-t border-white/10">
+            <div className="flex items-center gap-1">
+              <Badge variant="muted" className="px-1.5 text-[10px] bg-white/5 border-white/10 text-white/70">
+                <span className="text-yellow-500 mr-1">PP</span> ★★★★★
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              <span>{formatVolume(market.totalVolume)} Vol</span>
+              {market.status === 'Live' && (
+                <span className="flex items-center gap-1 text-red-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  Live
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

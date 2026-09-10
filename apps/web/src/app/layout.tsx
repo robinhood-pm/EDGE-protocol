@@ -33,7 +33,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", "dark", inter.variable, geistMono.variable, "font-sans", geist.variable)}
     >
-      <body className="min-h-full flex flex-col bg-[#070709] text-white font-sans selection:bg-[#594EE6]/30">
+      <body className="min-h-full flex flex-col bg-[#070709] text-white font-sans selection:bg-white/20">
         <Web3Provider>
           <GlobalLoadingOverlay />
           {children}

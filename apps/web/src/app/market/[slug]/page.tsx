@@ -323,7 +323,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                   {market.rewards.pointsToEarn} <span className="text-sm border border-yellow-500/30 rounded px-1">PP</span>
                 </div>
                 <div className="text-sm font-medium mb-3">to be earned</div>
-                <a href="#" className="text-xs text-blue-400 hover:underline">How It Works →</a>
+                <a href="#" className="text-xs text-white/70 hover:text-white hover:underline">How It Works →</a>
               </div>
 
             </div>

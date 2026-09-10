@@ -56,7 +56,7 @@ export default function Home() {
           <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
             {/* Promo Banner */}
             <div className="bg-white/5 rounded-xl overflow-hidden border border-white/10 relative aspect-[2/1] flex items-center justify-center p-6 text-center backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20" />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />
               <div className="relative z-10">
                 <h3 className="font-bold text-xl mb-2">Stay in the Loop</h3>
                 <p className="text-sm text-muted">Join the Predict mailing list</p>
@@ -99,7 +99,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center text-xs font-bold">Ξ</div>
+                    <div className="w-6 h-6 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">Ξ</div>
                     <span className="font-medium">ETH</span>
                   </div>
                   <span className="text-muted font-mono">$2,488.27</span>

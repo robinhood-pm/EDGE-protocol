@@ -31,7 +31,7 @@ export function Header() {
             <input 
               type="text" 
               placeholder="Search markets..." 
-              className="w-full bg-white/5 border border-white/10 text-white rounded-full h-10 pl-10 pr-4 text-sm focus:outline-none focus:border-[#594EE6]/50 focus:ring-1 focus:ring-[#594EE6]/50 transition-all placeholder:text-white/40"
+              className="w-full bg-white/5 border border-white/10 text-white rounded-full h-10 pl-10 pr-4 text-sm focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/30 transition-all placeholder:text-white/40"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white/60">
