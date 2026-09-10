@@ -26,7 +26,25 @@ async function main() {
   // 3. Backend URL for off-chain sync
   const backendUrl = process.env.API_URL || "http://localhost:8080";
 
+  // Fetch existing markets to avoid duplicates
+  console.log("Fetching existing markets from backend...");
+  let existingMarkets: any = { markets: [] };
+  try {
+    const res = await fetch(`${backendUrl}/api/markets`);
+    if (res.ok) {
+      existingMarkets = await res.json();
+    }
+  } catch (err) {
+    console.warn("Could not fetch existing markets. Proceeding anyway...");
+  }
+  const existingTitles = new Set(existingMarkets.markets.map((m: any) => m.title));
+
   for (const market of markets) {
+    if (existingTitles.has(market.title)) {
+      console.log(`\n⏭️ Skipping Market: "${market.title}" (Already exists)`);
+      continue;
+    }
+
     // If close_time is not provided, default to +7 days from now
     const closeTimeUnix = market.close_time || Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
     
@@ -86,7 +104,8 @@ async function main() {
           image_url: market.image_url,
           resolution_rules: market.resolution_rules,
           close_time: closeTimeUnix,
-          resolver_address: deployer.address
+          resolver_address: deployer.address,
+          category: market.category || "General"
         })
       });
 

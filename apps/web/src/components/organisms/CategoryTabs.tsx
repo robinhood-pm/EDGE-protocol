@@ -5,23 +5,36 @@ const CATEGORIES = [
   "Trending", "Live", "New", "Sports", "Politics", "Crypto", "Esports", "Finance", "Tech", "Economy", "Culture", "More"
 ];
 
-export function CategoryTabs() {
+interface CategoryTabsProps {
+  activeCategory?: string;
+  onCategoryChange?: (category: string) => void;
+  liveCount?: number;
+}
+
+export function CategoryTabs({ activeCategory, onCategoryChange, liveCount = 0 }: CategoryTabsProps) {
   return (
     <div className="w-full border-b border-white/10 bg-[#070709]/60 backdrop-blur-xl sticky top-16 z-40">
       <div className="container max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map((cat, idx) => (
+          {CATEGORIES.map((cat) => (
             <button 
               key={cat}
+              onClick={() => {
+                if (onCategoryChange) {
+                  onCategoryChange(cat);
+                } else {
+                  window.location.href = `/markets?category=${cat}`;
+                }
+              }}
               className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors ${
-                idx === 0 
+                activeCategory === cat 
                   ? "text-white border-b-2 border-white" 
                   : "text-white/50 hover:text-white"
               }`}
             >
               {cat === "Live" ? (
                 <div className="flex items-center gap-1.5">
-                  {cat} <span className="text-no text-xs font-bold">23</span>
+                  {cat} {liveCount > 0 && <span className="text-no text-xs font-bold">{liveCount}</span>}
                 </div>
               ) : (
                 cat

@@ -70,10 +70,10 @@ export function MarketCard({ market }: MarketCardProps) {
             <div className="flex-1 flex flex-col justify-end mb-4">
               <div className="flex justify-between text-sm font-bold mb-2">
                 <span className="text-yes flex items-center gap-1">
-                  <span className="text-xs">▲</span> {market.yesProbability}%
+                  Yes {market.yesProbability}%
                 </span>
                 <span className="text-no flex items-center gap-1">
-                  {market.noProbability}% <span className="text-xs">▼</span>
+                  No {market.noProbability}%
                 </span>
               </div>
               {/* Probability Bar */}
@@ -84,8 +84,8 @@ export function MarketCard({ market }: MarketCardProps) {
               </div>
               
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="yes" className="w-full text-xs h-9">UP {market.yesPrice}¢</Button>
-                <Button variant="no" className="w-full text-xs h-9">DOWN {market.noPrice}¢</Button>
+                <Button variant="yes" className="w-full text-xs h-9">Yes {market.yesPrice}¢</Button>
+                <Button variant="no" className="w-full text-xs h-9">No {market.noPrice}¢</Button>
               </div>
             </div>
           )}
@@ -93,9 +93,7 @@ export function MarketCard({ market }: MarketCardProps) {
           {/* Footer */}
           <div className="mt-auto pt-3 flex items-center justify-between text-xs text-white/50 border-t border-white/10">
             <div className="flex items-center gap-1">
-              <Badge variant="muted" className="px-1.5 text-[10px] bg-white/5 border-white/10 text-white/70">
-                <span className="text-yellow-500 mr-1">PP</span> ★★★★★
-              </Badge>
+              {/* Placeholder for future badges */}
             </div>
             <div className="flex items-center gap-3">
               <span>{formatVolume(market.totalVolume)} Vol</span>

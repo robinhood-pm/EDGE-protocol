@@ -12,7 +12,7 @@ export const FerrofluidBackground = () => {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Ferrofluid
         colors={["#ffffff","#fcddc2","#e6c9ba"]}
-        speed={0.6}
+        speed={0.2}
         scale={1.1}
         turbulence={0.95}
         fluidity={0.11}

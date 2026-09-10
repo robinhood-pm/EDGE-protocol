@@ -4,62 +4,183 @@
     "description": "Resolves to YES if the approved oracle reports a BTC/USD price >= $150,000 at any valid observation before the deadline.",
     "resolution_rules": "Based on official Chainlink BTC/USD price feed on Robinhood Chain.",
     "image_url": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-    "ipfs_hash": "QmHashBTC150k"
+    "ipfs_hash": "QmHashBTC150k",
+    "category": "Crypto"
   },
   {
     "title": "Will the Fed cut rates at the next FOMC meeting?",
     "description": "Resolves to YES if the Federal Reserve announces a rate cut at the upcoming FOMC meeting.",
     "resolution_rules": "Based on the official press release from the Federal Reserve Board.",
     "image_url": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=500",
-    "ipfs_hash": "QmHashFedCut"
+    "ipfs_hash": "QmHashFedCut",
+    "category": "Economy"
   },
   {
     "title": "Will AAPL reference price close above $250 this Friday?",
     "description": "Resolves to YES if the AAPL Stock Token reference price closes strictly above $250 on this Friday's trading session.",
     "resolution_rules": "Based on the official Robinhood Chain AAPL reference price oracle at market close.",
     "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
-    "ipfs_hash": "QmHashAAPL250"
+    "ipfs_hash": "QmHashAAPL250",
+    "category": "Finance"
   },
   {
     "title": "Will US CPI YoY print below 3.0%?",
     "description": "Resolves to YES if the next US Consumer Price Index (CPI) year-over-year report is below 3.0%.",
     "resolution_rules": "Based on the official data release by the U.S. Bureau of Labor Statistics.",
     "image_url": "https://images.unsplash.com/photo-1580519542036-ed47f3e42214?auto=format&fit=crop&q=80&w=500",
-    "ipfs_hash": "QmHashCPI3"
+    "ipfs_hash": "QmHashCPI3",
+    "category": "Economy"
   },
   {
     "title": "Will ETH outperform BTC this week?",
     "description": "Resolves to YES if the percentage gain of ETH/USD is strictly greater than BTC/USD over the 7-day period ending Sunday at 23:59 UTC.",
     "resolution_rules": "Based on Chainlink price feeds for ETH and BTC on Robinhood Chain.",
     "image_url": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-    "ipfs_hash": "QmHashETHvsBTC"
+    "ipfs_hash": "QmHashETHvsBTC",
+    "category": "Crypto"
   },
   {
     "title": "Will unemployment exceed 4.5%?",
     "description": "Resolves to YES if the next U.S. unemployment rate report prints strictly greater than 4.5%.",
     "resolution_rules": "Based on the official data release by the U.S. Bureau of Labor Statistics.",
     "image_url": "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&q=80&w=500",
-    "ipfs_hash": "QmHashUnemp"
+    "ipfs_hash": "QmHashUnemp",
+    "category": "Economy"
   },
   {
     "title": "Will TSLA reference price gain >5% after earnings?",
     "description": "Resolves to YES if the TSLA Stock Token reference price closes more than 5% higher on the day of its next earnings release compared to the previous day's close.",
     "resolution_rules": "Based on the official Robinhood Chain TSLA reference price oracle.",
     "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    "ipfs_hash": "QmHashTSLA5"
+    "ipfs_hash": "QmHashTSLA5",
+    "category": "Tech"
   },
   {
     "title": "Will SOL close above $300?",
     "description": "Resolves to YES if the SOL/USD price oracle reports a price >= $300 at any point before the end of the year.",
     "resolution_rules": "Based on the official Chainlink SOL/USD price feed.",
     "image_url": "https://cryptologos.cc/logos/solana-sol-logo.png",
-    "ipfs_hash": "QmHashSOL300"
+    "ipfs_hash": "QmHashSOL300",
+    "category": "Crypto"
   },
   {
     "title": "Will NVDA outperform SPY this week?",
     "description": "Resolves to YES if the NVDA Stock Token reference price percentage change is strictly greater than the SPY Stock Token reference price percentage change for the week.",
     "resolution_rules": "Based on official Robinhood Chain reference price oracles for NVDA and SPY.",
     "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/1024px-Nvidia_logo.svg.png",
-    "ipfs_hash": "QmHashNVDASPY"
+    "ipfs_hash": "QmHashNVDASPY",
+    "category": "Tech"
+  },
+  {
+    "title": "Will Donald Trump win the 2028 US Presidential Election?",
+    "description": "Resolves to YES if Donald Trump is elected President of the United States in the 2028 election.",
+    "resolution_rules": "Based on official election results confirmed by the Electoral College.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/500px-Donald_Trump_official_portrait.jpg",
+    "ipfs_hash": "QmHashTrump2028",
+    "category": "Politics"
+  },
+  {
+    "title": "Will Real Madrid win the Champions League 2026/2027?",
+    "description": "Resolves to YES if Real Madrid wins the UEFA Champions League title for the 2026/2027 season.",
+    "resolution_rules": "Based on the official UEFA results.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/500px-Real_Madrid_CF.svg.png",
+    "ipfs_hash": "QmHashRMAUCL",
+    "category": "Sports"
+  },
+  {
+    "title": "Will OpenAI release GPT-5 before July 2027?",
+    "description": "Resolves to YES if OpenAI officially announces and releases a model named GPT-5 or equivalent next-generation flagship model before July 1, 2027.",
+    "resolution_rules": "Based on official announcements from OpenAI's blog or press releases.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/500px-ChatGPT_logo.svg.png",
+    "ipfs_hash": "QmHashGPT5",
+    "category": "Tech"
+  },
+  {
+    "title": "Will GTA VI be delayed to 2028?",
+    "description": "Resolves to YES if Rockstar Games officially announces a delay for Grand Theft Auto VI, pushing its release date into the year 2028.",
+    "resolution_rules": "Based on official announcements from Rockstar Games or Take-Two Interactive.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Rockstar_Games_Logo.svg/500px-Rockstar_Games_Logo.svg.png",
+    "ipfs_hash": "QmHashGTAVI",
+    "category": "Culture"
+  },
+  {
+    "title": "Will T1 win League of Legends Worlds 2026?",
+    "description": "Resolves to YES if the T1 organization wins the LoL World Championship in 2026.",
+    "resolution_rules": "Based on official Riot Games tournament results.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f9/T1_logo.svg/500px-T1_logo.svg.png",
+    "ipfs_hash": "QmHashT1Worlds",
+    "category": "Esports"
+  },
+  {
+    "title": "Will CS2 reach 2M concurrent players by end of 2026?",
+    "description": "Resolves to YES if Counter-Strike 2 reaches a peak concurrent player count of 2,000,000 or more on Steam before December 31, 2026.",
+    "resolution_rules": "Based on official SteamDB peak player data.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Counter-Strike_2_logo.svg/500px-Counter-Strike_2_logo.svg.png",
+    "ipfs_hash": "QmHashCS2Peak",
+    "category": "Esports"
+  },
+  {
+    "title": "Will Taylor Swift release Reputation (Taylor's Version) in 2026?",
+    "description": "Resolves to YES if Taylor Swift officially releases the re-recorded album 'Reputation (Taylor's Version)' before December 31, 2026.",
+    "resolution_rules": "Based on official announcements and releases on Spotify/Apple Music.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Taylor_Swift_at_the_2023_MTV_Video_Music_Awards_%283%29.png/500px-Taylor_Swift_at_the_2023_MTV_Video_Music_Awards_%283%29.png",
+    "ipfs_hash": "QmHashReputationTV",
+    "category": "Culture"
+  },
+  {
+    "title": "Will the Lakers win the NBA Championship in 2027?",
+    "description": "Resolves to YES if the Los Angeles Lakers win the NBA Finals for the 2026-2027 season.",
+    "resolution_rules": "Based on official NBA championship results.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/500px-Los_Angeles_Lakers_logo.svg.png",
+    "ipfs_hash": "QmHashLakers2027",
+    "category": "Sports"
+  },
+  {
+    "title": "Will Max Verstappen win the 2026 F1 World Championship?",
+    "description": "Resolves to YES if Max Verstappen secures the Formula 1 World Drivers' Championship in the 2026 season.",
+    "resolution_rules": "Based on official FIA Formula 1 final standings.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1_logo.svg/500px-F1_logo.svg.png",
+    "ipfs_hash": "QmHashMaxF1",
+    "category": "Sports"
+  },
+  {
+    "title": "Will the UK re-enter the EU before 2030?",
+    "description": "Resolves to YES if the United Kingdom officially rejoins the European Union as a member state before January 1, 2030.",
+    "resolution_rules": "Based on official treaties ratified by both the UK Parliament and the EU.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/a/ae/Flag_of_the_United_Kingdom.svg/500px-Flag_of_the_United_Kingdom.svg.png",
+    "ipfs_hash": "QmHashUKEU",
+    "category": "Politics"
+  },
+  {
+    "title": "Will the S&P 500 close above 6500 by end of 2026?",
+    "description": "Resolves to YES if the S&P 500 index closes at or above 6,500 points on any trading day before December 31, 2026.",
+    "resolution_rules": "Based on official closing prices published by the NYSE/Cboe.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/New_York_Stock_Exchange_logo.svg/500px-New_York_Stock_Exchange_logo.svg.png",
+    "ipfs_hash": "QmHashSPX6500",
+    "category": "Finance"
+  },
+  {
+    "title": "Will Gold (XAU) reach $3000 an ounce in 2026?",
+    "description": "Resolves to YES if the spot price of Gold (XAU/USD) reaches or exceeds $3,000 at any point during 2026.",
+    "resolution_rules": "Based on official LBMA Gold Price or major commodities exchanges.",
+    "image_url": "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=500",
+    "ipfs_hash": "QmHashGold3000",
+    "category": "Finance"
+  },
+  {
+    "title": "Will Apple release a foldable iPhone by 2026?",
+    "description": "Resolves to YES if Apple Inc. officially announces or releases a smartphone with a foldable screen before December 31, 2026.",
+    "resolution_rules": "Based on official Apple press releases or events.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    "ipfs_hash": "QmHashFoldableiPhone",
+    "category": "Tech"
+  },
+  {
+    "title": "Will Ethereum flip Bitcoin in Market Cap by 2030?",
+    "description": "Resolves to YES if the total market capitalization of Ethereum (ETH) strictly exceeds that of Bitcoin (BTC) at any point before January 1, 2030.",
+    "resolution_rules": "Based on official CoinMarketCap or CoinGecko market cap data.",
+    "image_url": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    "ipfs_hash": "QmHashFlippening",
+    "category": "Crypto"
   }
 ]

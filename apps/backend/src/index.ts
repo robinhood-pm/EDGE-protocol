@@ -31,7 +31,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'edge-protocol-backend' });
 });
 
+import { startIndexer } from './services/indexer';
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Backend is running on http://localhost:${PORT}`);
+  
+  // Start Indexer
+  startIndexer();
 });

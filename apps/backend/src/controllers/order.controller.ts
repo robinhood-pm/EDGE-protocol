@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
-import { verifyTypedData } from 'ethers';
+import { verifyTypedData, verifyMessage } from 'ethers';
 import * as dotenv from 'dotenv';
 import { matchOrdersAsync } from '../services/matchingEngine';
 dotenv.config();
@@ -80,55 +80,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const cancelOrder = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { signature, wallet_address } = req.body;
 
-    if (!signature || !wallet_address) {
-      return res.status(400).json({ error: "Missing signature or wallet_address" });
-    }
-
-    // Verify the signature (message should be "Cancel Order {id}")
-    const message = `Cancel Order ${id}`;
-    
-    const { verifyMessage } = require('ethers');
-    const recoveredAddress = verifyMessage(message, signature);
-
-    if (recoveredAddress.toLowerCase() !== wallet_address.toLowerCase()) {
-      return res.status(401).json({ error: "Invalid signature. Signer mismatch." });
-    }
-
-    // Ensure the order belongs to the wallet
-    const { data: orderData, error: orderError } = await supabase
-      .from('orders')
-      .select('wallet_address')
-      .eq('id', id)
-      .single();
-
-    if (orderError || !orderData) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (orderData.wallet_address.toLowerCase() !== wallet_address.toLowerCase()) {
-      return res.status(403).json({ error: 'Unauthorized to cancel this order' });
-    }
-
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ status: 'CANCELLED' })
-      .eq('id', id)
-      .select();
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json({ message: 'Order cancelled', order: data[0] });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-};
 
 export const getMarketOrders = async (req: Request, res: Response) => {
   try {
@@ -148,6 +100,57 @@ export const getMarketOrders = async (req: Request, res: Response) => {
     }
 
     res.json({ orders: data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { signature } = req.body;
+
+    if (!id || !signature) {
+      return res.status(400).json({ error: "Missing order id or signature" });
+    }
+
+    // 1. Fetch Order
+    const { data: order, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.status !== 'PENDING' && order.status !== 'PARTIALLY_FILLED') {
+      return res.status(400).json({ error: 'Only pending orders can be cancelled' });
+    }
+
+    // 2. Verify Signature
+    // Message should be "Cancel Order: <order_id>"
+    const expectedMessage = `Cancel Order: ${id}`;
+    const signerAddress = verifyMessage(expectedMessage, signature);
+
+    if (signerAddress.toLowerCase() !== order.wallet_address.toLowerCase()) {
+      return res.status(401).json({ error: "Invalid cryptographic signature. Signer mismatch." });
+    }
+
+    // 3. Update Status
+    const { data: updatedOrder, error: updateError } = await supabase
+      .from('orders')
+      .update({ status: 'CANCELLED' })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    res.json({ message: 'Order cancelled successfully', order: updatedOrder });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

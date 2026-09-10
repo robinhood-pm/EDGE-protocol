@@ -9,11 +9,33 @@ const formatPrice = (priceStr: string) => {
 export const getMarkets = async (req: Request, res: Response) => {
   try {
     const network = process.env.NETWORK || 'TESTNET';
-    const { data, error } = await supabase
+    const { filter, category } = req.query;
+
+    let query = supabase
       .from('markets')
       .select('*')
-      .eq('network', network)
-      .order('created_at', { ascending: false });
+      .eq('network', network);
+
+    // Dynamic filters
+    if (filter === 'Live') {
+      query = query.eq('status', 'OPEN');
+    }
+
+    // Exact category filter
+    if (category) {
+      query = query.eq('category', String(category));
+    }
+
+    // Ordering based on filter
+    if (filter === 'Trending') {
+      query = query.order('total_volume_usdg', { ascending: false });
+    } else if (filter === 'New') {
+      query = query.order('created_at', { ascending: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -37,7 +59,14 @@ export const getMarkets = async (req: Request, res: Response) => {
       };
     });
 
-    res.json({ markets: formattedMarkets });
+    // Count live markets (only if no exact category filter is applied, or count them independently)
+    const { count: liveCount } = await supabase
+      .from('markets')
+      .select('*', { count: 'exact', head: true })
+      .eq('network', network)
+      .eq('status', 'OPEN');
+
+    res.json({ markets: formattedMarkets, liveCount: liveCount || 0 });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -220,7 +249,7 @@ export const getMarketById = async (req: Request, res: Response) => {
 
 export const createMarket = async (req: Request, res: Response) => {
   try {
-    const { id, title, slug, description, image_url, resolution_rules, close_time, resolver_address } = req.body;
+    const { id, title, slug, description, image_url, resolution_rules, close_time, resolver_address, category } = req.body;
     const network = process.env.NETWORK || 'TESTNET';
 
     if (!id || !title || !close_time || !resolver_address) {
@@ -242,7 +271,8 @@ export const createMarket = async (req: Request, res: Response) => {
           resolver_address,
           status: 'OPEN',
           total_volume_usdg: 0,
-          current_yes_probability: 50.0
+          current_yes_probability: 50.0,
+          category: category || 'General'
         }
       ])
       .select()

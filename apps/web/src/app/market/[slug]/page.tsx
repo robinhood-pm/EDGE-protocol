@@ -48,7 +48,8 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
       const res = await fetch(`${backendUrl}/api/markets/${marketId}/trades?range=${chartRange}`);
       if (!res.ok) throw new Error('Failed to fetch trades');
       return res.json();
-    }
+    },
+    refetchInterval: 10000, // Poll every 10s as a fallback to Realtime
   });
 
   useEffect(() => {

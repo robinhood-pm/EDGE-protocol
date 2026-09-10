@@ -19,8 +19,10 @@ interface TradePanelProps {
 export function TradePanel({ market }: TradePanelProps) {
   const { address, isConnected } = useAccount();
   const [amountStr, setAmountStr] = useState<string>('5');
+  const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
   const [selectedOutcome, setSelectedOutcome] = useState<0 | 1>(1); // 1 = YES/UP, 0 = NO/DOWN
   const amountToSpend = parseUnits(amountStr || '0', 6);
+  const inputNum = Number(amountStr || '0');
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   
   // Fetch Orderbook
@@ -44,7 +46,7 @@ export function TradePanel({ market }: TradePanelProps) {
   });
   
   const balance = balanceData ? (balanceData as bigint) : BigInt(0);
-  const isInsufficient = balance < amountToSpend;
+  const isInsufficient = tradeAction === 'buy' ? balance < amountToSpend : false;
 
   // Read USDG Allowance for Exchange
   const { data: allowanceData } = useReadContract({
@@ -56,7 +58,19 @@ export function TradePanel({ market }: TradePanelProps) {
   });
   
   const allowance = allowanceData ? (allowanceData as bigint) : BigInt(0);
-  const needsApproval = allowance < amountToSpend;
+  const needsApproval = tradeAction === 'buy' ? allowance < amountToSpend : false;
+
+  // Read ConditionalTokens Approval for Exchange
+  const { data: isApprovedForAllData } = useReadContract({
+    address: CONTRACT_ADDRESSES.ConditionalTokens,
+    abi: ABIS.ConditionalTokens,
+    functionName: 'isApprovedForAll',
+    args: address ? [address, CONTRACT_ADDRESSES.Exchange] : undefined,
+    query: { enabled: !!address }
+  });
+  
+  const isApprovedForAll = !!isApprovedForAllData;
+  const needsCTApproval = tradeAction === 'sell' ? !isApprovedForAll : false;
 
   // Write Contract (Approve)
   const { writeContract: approve, data: approveTxHash, isPending: isApproving } = useWriteContract();
@@ -75,7 +89,16 @@ export function TradePanel({ market }: TradePanelProps) {
     });
   };
 
-  const handleBuy = async (outcome: 0 | 1) => {
+  const handleApproveCT = () => {
+    approve({
+      address: CONTRACT_ADDRESSES.ConditionalTokens,
+      abi: ABIS.ConditionalTokens,
+      functionName: 'setApprovalForAll',
+      args: [CONTRACT_ADDRESSES.Exchange, true],
+    });
+  };
+
+  const handleTrade = async (outcome: 0 | 1) => {
     if (!address) return;
     try {
       setIsSigning(true);
@@ -103,7 +126,13 @@ export function TradePanel({ market }: TradePanelProps) {
       // Math: price in 6 decimals, amount is number of shares in 6 decimals
       const priceNum = selectedOutcome === 1 ? market.currentPrice : (1 - market.currentPrice);
       const priceContract = BigInt(Math.floor(priceNum * 1000000));
-      const sharesContract = (amountToSpend * BigInt(1000000)) / priceContract;
+      
+      let sharesContract: bigint;
+      if (tradeAction === 'buy') {
+        sharesContract = (BigInt(Math.floor(inputNum * 1000000)) * BigInt(1000000)) / priceContract;
+      } else {
+        sharesContract = BigInt(Math.floor(inputNum * 1000000));
+      }
 
       const order = {
         maker: address,
@@ -111,7 +140,7 @@ export function TradePanel({ market }: TradePanelProps) {
         outcome,
         amount: sharesContract, // Number of shares
         price: priceContract, // Price per share
-        isBuy: true,
+        isBuy: tradeAction === 'buy',
         nonce: BigInt(Math.floor(Math.random() * 1000000)),
         expiration: BigInt(Math.floor(Date.now() / 1000) + 3600)
       };
@@ -198,8 +227,14 @@ export function TradePanel({ market }: TradePanelProps) {
 
       <div className="p-5">
         <div className="flex items-center gap-4 text-sm font-medium border-b border-border pb-4 mb-4">
-          <button className="text-foreground">Buy</button>
-          <button className="text-muted hover:text-foreground">Sell</button>
+          <button 
+            className={tradeAction === 'buy' ? "text-foreground" : "text-muted hover:text-foreground"}
+            onClick={() => setTradeAction('buy')}
+          >Buy</button>
+          <button 
+            className={tradeAction === 'sell' ? "text-foreground" : "text-muted hover:text-foreground"}
+            onClick={() => setTradeAction('sell')}
+          >Sell</button>
           <div className="ml-auto flex items-center gap-2 text-muted">
             <span>1-Tap</span> <Settings2 className="w-4 h-4" />
           </div>
@@ -223,7 +258,7 @@ export function TradePanel({ market }: TradePanelProps) {
         </div>
 
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium">Amount (USDG)</span>
+          <span className="text-sm font-medium">Amount {tradeAction === 'buy' ? '(USDG)' : '(Shares)'}</span>
           <input 
             type="number" 
             value={amountStr} 
@@ -252,14 +287,22 @@ export function TradePanel({ market }: TradePanelProps) {
           >
             {(isApproving || isWaitingApprove) ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Approve USDG'}
           </Button>
+        ) : needsCTApproval ? (
+          <Button 
+            className="w-full mb-4 font-bold" 
+            onClick={handleApproveCT} 
+            disabled={isApproving || isWaitingApprove}
+          >
+            {(isApproving || isWaitingApprove) ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Approve Tokens for Sale'}
+          </Button>
         ) : (
           <Button 
             variant={selectedOutcome === 1 ? "yes" : "no"} 
             className="w-full mb-4 font-bold text-white" 
-            onClick={() => handleBuy(selectedOutcome)} 
+            onClick={() => handleTrade(selectedOutcome)} 
             disabled={isSigning}
           >
-            {isSigning ? <Loader2 className="w-4 h-4 animate-spin" /> : `Sign Buy ${selectedOutcome === 1 ? 'UP' : 'DOWN'} Order`}
+            {isSigning ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : `Place ${tradeAction === 'buy' ? 'Buy' : 'Sell'} Order`}
           </Button>
         )}
         

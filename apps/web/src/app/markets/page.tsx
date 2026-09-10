@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Header } from '@/components/organisms/Header';
 import { CategoryTabs } from '@/components/organisms/CategoryTabs';
 import { MarketCard } from '@/components/molecules/MarketCard';
@@ -9,29 +9,55 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, BarChart3 } from 'lucide-react';
 
 export default function Home() {
-  const { data: markets = [], isLoading } = useQuery({
-    queryKey: ['markets'],
+  const [activeCategory, setActiveCategory] = useState("Trending");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['markets', activeCategory],
     queryFn: async () => {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${backendUrl}/api/markets`);
+      const isDynamicFilter = ['Trending', 'Live', 'New'].includes(activeCategory);
+      const queryParam = isDynamicFilter ? `filter=${activeCategory}` : `category=${activeCategory}`;
+      
+      const res = await fetch(`${backendUrl}/api/markets?${queryParam}`);
       if (!res.ok) throw new Error('Failed to fetch markets');
-      const data = await res.json();
-      return data.markets as Market[];
+      return await res.json();
     }
   });
+
+  const markets = (data?.markets as Market[]) || [];
+  const liveCount = data?.liveCount || 0;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <CategoryTabs />
+      <CategoryTabs activeCategory={activeCategory} onCategoryChange={setActiveCategory} liveCount={liveCount} />
       
       <main className="flex-1 container max-w-screen-2xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content Area */}
           <div className="flex-1">
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-muted" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="rounded-xl border border-white/10 bg-white/5 h-[320px] overflow-hidden flex flex-col relative animate-pulse">
+                    {/* Header/Image skeleton */}
+                    <div className="h-32 bg-white/10 w-full" />
+                    {/* Content skeleton */}
+                    <div className="p-4 flex-1 flex flex-col gap-4">
+                      <div className="h-6 bg-white/10 rounded w-5/6" />
+                      <div className="h-4 bg-white/10 rounded w-4/6" />
+                      <div className="flex gap-2 mt-2">
+                        <div className="h-5 bg-white/10 rounded w-16" />
+                        <div className="h-5 bg-white/10 rounded w-20" />
+                      </div>
+                      {/* Buttons skeleton */}
+                      <div className="mt-auto flex gap-2">
+                        <div className="h-10 bg-white/10 rounded flex-1" />
+                        <div className="h-10 bg-white/10 rounded flex-1" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : markets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center border border-border border-dashed rounded-2xl bg-white/5">
@@ -40,73 +66,17 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">No Markets Available</h3>
                 <p className="text-muted text-sm max-w-sm mx-auto mb-6">
-                  There are currently no active prediction markets. Check back later or create one if you're an admin.
+                  There are currently no active prediction markets in this category.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {markets.map((market) => (
                   <MarketCard key={market.id} market={market} />
                 ))}
               </div>
             )}
           </div>
-          
-          {/* Right Sidebar */}
-          <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
-            {/* Promo Banner */}
-            <div className="bg-white/5 rounded-xl overflow-hidden border border-white/10 relative aspect-[2/1] flex items-center justify-center p-6 text-center backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5" />
-              <div className="relative z-10">
-                <h3 className="font-bold text-xl mb-2">Stay in the Loop</h3>
-                <p className="text-sm text-muted">Join the Predict mailing list</p>
-              </div>
-            </div>
-
-            {/* Games Section */}
-            <div>
-              <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
-                <span className="text-red-500">((•))</span> Games
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-neutral-800" />
-                    <span>MGC</span>
-                  </div>
-                  <span className="font-medium">43%</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-neutral-800" />
-                    <span>FAZE</span>
-                  </div>
-                  <span className="font-medium">61%</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Crypto Up/Down Section */}
-            <div>
-              <h2 className="text-lg font-bold mb-4">Crypto Up/Down</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center text-xs font-bold">₿</div>
-                    <span className="font-medium">BTC</span>
-                  </div>
-                  <span className="text-muted font-mono">$78,582.01</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">Ξ</div>
-                    <span className="font-medium">ETH</span>
-                  </div>
-                  <span className="text-muted font-mono">$2,488.27</span>
-                </div>
-              </div>
-            </div>
-          </aside>
         </div>
       </main>
     </div>
