@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ConditionalTokens.sol";
 
 /**
@@ -9,10 +10,10 @@ import "./ConditionalTokens.sol";
  * @dev Manages the creation, status, and resolution of prediction markets.
  * Acts as the centralized registry for all markets.
  */
-contract MarketFactory is Ownable {
-    ConditionalTokens public immutable conditionalTokens;
+contract MarketFactory is Initializable, OwnableUpgradeable {
+    ConditionalTokens public conditionalTokens;
     
-    uint256 public nextMarketId = 1;
+    uint256 public nextMarketId;
 
     enum MarketStatus { OPEN, CLOSED, RESOLVED, INVALIDATED }
 
@@ -32,9 +33,16 @@ contract MarketFactory is Ownable {
     event MarketResolved(uint256 indexed marketId, uint8 winningOutcome);
     event MarketInvalidated(uint256 indexed marketId);
 
-    constructor(address _conditionalTokens) Ownable(msg.sender) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _conditionalTokens) public initializer {
         require(_conditionalTokens != address(0), "Invalid conditional tokens address");
+        __Ownable_init(msg.sender);
         conditionalTokens = ConditionalTokens(_conditionalTokens);
+        nextMarketId = 1;
     }
 
     /**
@@ -112,6 +120,8 @@ contract MarketFactory is Ownable {
         require(market.status != MarketStatus.RESOLVED, "Already resolved");
 
         market.status = MarketStatus.INVALIDATED;
+        conditionalTokens.invalidateMarket(marketId);
+        
         emit MarketInvalidated(marketId);
     }
 }

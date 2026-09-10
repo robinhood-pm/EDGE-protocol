@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 async function logTx(txHash: string | undefined, receipt: any) {
   if (txHash) {
@@ -28,7 +28,7 @@ async function main() {
   // 2. Deploy ConditionalTokens
   console.log("\nDeploying ConditionalTokens...");
   const ConditionalTokens = await ethers.getContractFactory("ConditionalTokens");
-  const conditionalTokens = await ConditionalTokens.deploy(usdgAddress, "");
+  const conditionalTokens = await upgrades.deployProxy(ConditionalTokens, [usdgAddress, ""]);
   await conditionalTokens.waitForDeployment();
   const conditionalTokensAddress = await conditionalTokens.getAddress();
   console.log("ConditionalTokens deployed to:", conditionalTokensAddress);
@@ -37,7 +37,7 @@ async function main() {
   // 3. Deploy MarketFactory
   console.log("\nDeploying MarketFactory...");
   const MarketFactory = await ethers.getContractFactory("MarketFactory");
-  const marketFactory = await MarketFactory.deploy(conditionalTokensAddress);
+  const marketFactory = await upgrades.deployProxy(MarketFactory, [conditionalTokensAddress]);
   await marketFactory.waitForDeployment();
   const marketFactoryAddress = await marketFactory.getAddress();
   console.log("MarketFactory deployed to:", marketFactoryAddress);
@@ -53,7 +53,7 @@ async function main() {
   // 4. Deploy FeeTreasury
   console.log("\nDeploying FeeTreasury...");
   const FeeTreasury = await ethers.getContractFactory("FeeTreasury");
-  const feeTreasury = await FeeTreasury.deploy();
+  const feeTreasury = await upgrades.deployProxy(FeeTreasury, []);
   await feeTreasury.waitForDeployment();
   const feeTreasuryAddress = await feeTreasury.getAddress();
   console.log("FeeTreasury deployed to:", feeTreasuryAddress);
@@ -62,11 +62,11 @@ async function main() {
   // 5. Deploy Exchange
   console.log("\nDeploying Exchange...");
   const Exchange = await ethers.getContractFactory("Exchange");
-  const exchange = await Exchange.deploy(
+  const exchange = await upgrades.deployProxy(Exchange, [
     conditionalTokensAddress,
     usdgAddress,
     feeTreasuryAddress
-  );
+  ]);
   await exchange.waitForDeployment();
   const exchangeAddress = await exchange.getAddress();
   console.log("Exchange deployed to:", exchangeAddress);

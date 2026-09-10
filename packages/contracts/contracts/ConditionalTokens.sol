@@ -1,25 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @title ConditionalTokens
  * @dev Implementation of the Conditional Tokens standard for Prediction Markets.
  * Allows splitting collateral into YES and NO tokens, merging them back, and redeeming winnings.
  */
-contract ConditionalTokens is ERC1155, Ownable {
+contract ConditionalTokens is Initializable, ERC1155Upgradeable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable collateralToken;
+    IERC20 public collateralToken;
 
     // Mapping from marketId to whether it has been resolved
     mapping(uint256 => bool) public isMarketResolved;
     // Mapping from marketId to the winning outcome (0 for NO, 1 for YES)
     mapping(uint256 => uint8) public marketWinner;
+    
+    // Mapping from marketId to whether it is invalidated
+    mapping(uint256 => bool) public isMarketInvalidated;
 
     // Events
     event PositionSplit(address indexed stakeholder, uint256 indexed marketId, uint256 amount);
@@ -27,8 +31,15 @@ contract ConditionalTokens is ERC1155, Ownable {
     event PositionRedeemed(address indexed stakeholder, uint256 indexed marketId, uint256 amount, uint8 winningOutcome);
     event MarketResolved(uint256 indexed marketId, uint8 winningOutcome);
 
-    constructor(address _collateralToken, string memory _uri) ERC1155(_uri) Ownable(msg.sender) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _collateralToken, string memory _uri) public initializer {
         require(_collateralToken != address(0), "Invalid collateral token");
+        __ERC1155_init(_uri);
+        __Ownable_init(msg.sender);
         collateralToken = IERC20(_collateralToken);
     }
 
@@ -119,24 +130,54 @@ contract ConditionalTokens is ERC1155, Ownable {
     }
 
     /**
-     * @dev Redeems winning tokens for collateral after a market is resolved.
+     * @dev Invalidates a market. Only callable by the owner (which will be the Factory/Registry).
+     * @param marketId The unique ID of the market.
+     */
+    function invalidateMarket(uint256 marketId) external onlyOwner {
+        require(!isMarketResolved[marketId], "Market already resolved");
+        require(!isMarketInvalidated[marketId], "Market already invalidated");
+
+        isMarketInvalidated[marketId] = true;
+
+        emit MarketResolved(marketId, 255); // 255 can signify invalid
+    }
+
+    /**
+     * @dev Redeems winning tokens for collateral after a market is resolved or invalidated.
      * @param marketId The unique ID of the market.
      */
     function redeemPositions(uint256 marketId) external {
-        require(isMarketResolved[marketId], "Market not resolved yet");
+        require(isMarketResolved[marketId] || isMarketInvalidated[marketId], "Market not ready for redemption");
 
-        uint8 outcome = marketWinner[marketId];
-        uint256 winningTokenId = getPositionId(marketId, outcome);
-        
-        uint256 balance = balanceOf(msg.sender, winningTokenId);
-        require(balance > 0, "No winning tokens to redeem");
+        if (isMarketInvalidated[marketId]) {
+            uint256 yesTokenId = getPositionId(marketId, 1);
+            uint256 noTokenId = getPositionId(marketId, 0);
 
-        // Burn the winning tokens
-        _burn(msg.sender, winningTokenId, balance);
+            uint256 yesBalance = balanceOf(msg.sender, yesTokenId);
+            uint256 noBalance = balanceOf(msg.sender, noTokenId);
 
-        // Transfer collateral equivalent to the balance
-        collateralToken.safeTransfer(msg.sender, balance);
+            uint256 totalRedeemable = (yesBalance + noBalance) / 2;
+            require(totalRedeemable > 0, "No tokens to redeem");
 
-        emit PositionRedeemed(msg.sender, marketId, balance, outcome);
+            if (yesBalance > 0) _burn(msg.sender, yesTokenId, yesBalance);
+            if (noBalance > 0) _burn(msg.sender, noTokenId, noBalance);
+
+            collateralToken.safeTransfer(msg.sender, totalRedeemable);
+            emit PositionRedeemed(msg.sender, marketId, totalRedeemable, 255);
+        } else {
+            uint8 outcome = marketWinner[marketId];
+            uint256 winningTokenId = getPositionId(marketId, outcome);
+            
+            uint256 balance = balanceOf(msg.sender, winningTokenId);
+            require(balance > 0, "No winning tokens to redeem");
+
+            // Burn the winning tokens
+            _burn(msg.sender, winningTokenId, balance);
+
+            // Transfer collateral equivalent to the balance
+            collateralToken.safeTransfer(msg.sender, balance);
+
+            emit PositionRedeemed(msg.sender, marketId, balance, outcome);
+        }
     }
 }

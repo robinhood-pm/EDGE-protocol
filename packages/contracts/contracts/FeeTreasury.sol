@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -10,12 +11,19 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * @dev Simple treasury contract to hold fees collected by the Exchange.
  * The owner (eventually a Multi-Sig) can withdraw accumulated funds.
  */
-contract FeeTreasury is Ownable {
+contract FeeTreasury is Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     event Withdrawn(address indexed token, address indexed to, uint256 amount);
 
-    constructor() Ownable(msg.sender) {}
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer {
+        __Ownable_init(msg.sender);
+    }
 
     /**
      * @dev Withdraws ERC20 tokens from the treasury.

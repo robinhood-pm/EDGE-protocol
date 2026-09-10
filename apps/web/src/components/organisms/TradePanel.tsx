@@ -85,10 +85,10 @@ export function TradePanel({ market }: TradePanelProps) {
 
       const order = {
         maker: address,
-        marketId: BigInt(1), // Hardcoded for MVP
+        marketId: BigInt(market.id),
         outcome,
-        amount: amountToSpend, // Number of shares (MVP hack)
-        price: amountToSpend, // Total USDG cost
+        amount: amountToSpend,
+        price: amountToSpend,
         isBuy: true,
         nonce: BigInt(Math.floor(Math.random() * 1000000)),
         expiration: BigInt(Math.floor(Date.now() / 1000) + 3600)
@@ -102,11 +102,46 @@ export function TradePanel({ market }: TradePanelProps) {
       });
 
       console.log("Order Signed:", order, "Signature:", signature);
-      alert("Order signed successfully! Next step: send to backend.");
-      // TODO: send to backend
+
+      // Convert BigInts to Strings for JSON transport
+      const rawOrderForBackend = {
+        maker: order.maker,
+        marketId: order.marketId.toString(),
+        outcome: order.outcome,
+        amount: order.amount.toString(),
+        price: order.price.toString(),
+        isBuy: order.isBuy,
+        nonce: order.nonce.toString(),
+        expiration: order.expiration.toString()
+      };
+
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
       
-    } catch (e) {
-      console.error("Signature failed", e);
+      const response = await fetch(`${backendUrl}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          market_id: market.id,
+          wallet_address: address,
+          side: 'BUY',
+          order_type: 'LIMIT',
+          amount: amountToSpend.toString(),
+          price: amountToSpend.toString(),
+          signature: signature,
+          rawOrder: rawOrderForBackend
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit order to backend');
+      }
+
+      alert("Order submitted successfully to the Orderbook!");
+      
+    } catch (e: any) {
+      console.error("Order submission failed:", e);
+      alert(`Error: ${e.message}`);
     } finally {
       setIsSigning(false);
     }
@@ -134,8 +169,12 @@ export function TradePanel({ market }: TradePanelProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <Button variant="yes" className="h-12 text-sm font-bold shadow-sm shadow-yes/20" onClick={() => setAmountStr('5')}>UP 36¢</Button>
-          <Button variant="secondary" className="h-12 text-sm font-bold text-foreground" onClick={() => setAmountStr('5')}>DOWN 65¢</Button>
+          <Button variant="yes" className="h-12 text-sm font-bold shadow-sm shadow-yes/20" onClick={() => setAmountStr('5')}>
+            UP {market.currentPrice * 100}¢
+          </Button>
+          <Button variant="secondary" className="h-12 text-sm font-bold text-foreground" onClick={() => setAmountStr('5')}>
+            DOWN {(1 - market.currentPrice) * 100}¢
+          </Button>
         </div>
 
         <div className="flex items-center justify-between mb-3">

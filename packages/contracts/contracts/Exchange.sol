@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -12,22 +13,25 @@ import "./FeeTreasury.sol";
  * @title Exchange
  * @dev Settles trades between buyers and sellers of Conditional Tokens using EIP-712 signatures.
  */
-contract Exchange is EIP712 {
+contract Exchange is Initializable, EIP712Upgradeable {
     using SafeERC20 for IERC20;
 
-    ConditionalTokens public immutable conditionalTokens;
-    IERC20 public immutable collateralToken;
-    FeeTreasury public immutable feeTreasury;
+    ConditionalTokens public conditionalTokens;
+    IERC20 public collateralToken;
+    FeeTreasury public feeTreasury;
 
-    uint256 public feeBasisPoints = 100; // 1% default fee
+    uint256 public feeBasisPoints; // 1% default fee
 
     // TypeHash for EIP-712
     bytes32 public constant ORDER_TYPEHASH = keccak256(
         "Order(address maker,uint256 marketId,uint8 outcome,uint256 amount,uint256 price,bool isBuy,uint256 nonce,uint256 expiration)"
     );
 
-    // Track cancelled or filled nonces (mapping maker => nonce => isUsed)
-    mapping(address => mapping(uint256 => bool)) public usedNonces;
+    // Track cancelled nonces (mapping maker => nonce => isCancelled)
+    mapping(address => mapping(uint256 => bool)) public cancelledNonces;
+
+    // Track filled amounts for partial fills (mapping orderHash => filledAmount)
+    mapping(bytes32 => uint256) public filledAmount;
 
     event OrderMatched(
         bytes32 buyOrderHash,
@@ -40,14 +44,21 @@ contract Exchange is EIP712 {
         uint256 price
     );
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address _conditionalTokens,
         address _collateralToken,
         address _feeTreasury
-    ) EIP712("EdgeProtocolExchange", "1") {
+    ) public initializer {
+        __EIP712_init("EdgeProtocolExchange", "1");
         conditionalTokens = ConditionalTokens(_conditionalTokens);
         collateralToken = IERC20(_collateralToken);
         feeTreasury = FeeTreasury(_feeTreasury);
+        feeBasisPoints = 100;
     }
 
     struct Order {
@@ -84,7 +95,7 @@ contract Exchange is EIP712 {
     }
 
     function cancelOrder(uint256 nonce) external {
-        usedNonces[msg.sender][nonce] = true;
+        cancelledNonces[msg.sender][nonce] = true;
     }
 
     /**
@@ -103,32 +114,43 @@ contract Exchange is EIP712 {
         
         require(buyOrder.marketId == sellOrder.marketId, "Market mismatch");
         require(buyOrder.outcome == sellOrder.outcome, "Outcome mismatch");
-        require(buyOrder.amount == sellOrder.amount, "Amount mismatch (exact fill required for MVP)");
         require(buyOrder.price >= sellOrder.price, "Price mismatch (buyer price < seller price)");
 
         require(block.timestamp <= buyOrder.expiration, "Buy order expired");
         require(block.timestamp <= sellOrder.expiration, "Sell order expired");
 
-        require(!usedNonces[buyOrder.maker][buyOrder.nonce], "Buy order nonce used");
-        require(!usedNonces[sellOrder.maker][sellOrder.nonce], "Sell order nonce used");
+        require(!cancelledNonces[buyOrder.maker][buyOrder.nonce], "Buy order cancelled");
+        require(!cancelledNonces[sellOrder.maker][sellOrder.nonce], "Sell order cancelled");
 
         require(verifySignature(buyOrder, buySignature), "Invalid buy signature");
         require(verifySignature(sellOrder, sellSignature), "Invalid sell signature");
 
-        // Mark nonces as used
-        usedNonces[buyOrder.maker][buyOrder.nonce] = true;
-        usedNonces[sellOrder.maker][sellOrder.nonce] = true;
+        bytes32 buyHash = hashOrder(buyOrder);
+        bytes32 sellHash = hashOrder(sellOrder);
 
-        // Calculate total cost and fees
-        // Execution price is the seller's asking price (or could be mid-price, depending on engine rules)
+        uint256 buyRemaining = buyOrder.amount - filledAmount[buyHash];
+        uint256 sellRemaining = sellOrder.amount - filledAmount[sellHash];
+
+        require(buyRemaining > 0, "Buy order fully filled");
+        require(sellRemaining > 0, "Sell order fully filled");
+
+        // Match amount is the minimum of remaining amounts
+        uint256 matchAmount = buyRemaining < sellRemaining ? buyRemaining : sellRemaining;
+
+        // Update filled amounts
+        filledAmount[buyHash] += matchAmount;
+        filledAmount[sellHash] += matchAmount;
+
+        // Calculate total cost and fees based on matchAmount
         uint256 executionPrice = sellOrder.price;
-        uint256 totalCost = (buyOrder.amount * executionPrice) / 1e18; // assuming price is scaled by 1e18 for precision, or simpler:
-        // Wait, to avoid precision issues in MVP, let's say `price` is total collateral cost for 1 share.
-        // Actually, if amount is 1 share, cost is `price`. 
-        // Let's just use totalCost = buyOrder.amount * executionPrice / 1000000 (if 6 decimals).
-        // Let's assume price is total price for the entire `amount` to keep it simple, or price is per unit.
-        // Let's make `price` the TOTAL price for the `amount` of shares in the order.
-        totalCost = executionPrice; // simplified for MVP: price is the total collateral required for this amount of shares.
+        
+        // In this MVP, price is cost-per-share scaled or total cost. 
+        // Previously we assumed price is the total cost for `buyOrder.amount` shares.
+        // For partial fills to work correctly, `price` MUST be price per share!
+        // So totalCost = matchAmount * executionPrice / 1e18 or just unit cost.
+        // Wait, if price was total cost, partial fill requires prorating.
+        // Let's assume price is per share.
+        uint256 totalCost = (matchAmount * executionPrice) / 1e6; // if price is 0.36 USDG (360000)
 
         uint256 fee = (totalCost * feeBasisPoints) / 10000;
         uint256 sellerProceeds = totalCost - fee;
@@ -141,16 +163,16 @@ contract Exchange is EIP712 {
 
         // 2. Transfer Outcome Tokens (ERC1155) from Seller to Buyer
         uint256 tokenId = conditionalTokens.getPositionId(buyOrder.marketId, buyOrder.outcome);
-        conditionalTokens.safeTransferFrom(sellOrder.maker, buyOrder.maker, tokenId, buyOrder.amount, "");
+        conditionalTokens.safeTransferFrom(sellOrder.maker, buyOrder.maker, tokenId, matchAmount, "");
 
         emit OrderMatched(
-            hashOrder(buyOrder),
-            hashOrder(sellOrder),
+            buyHash,
+            sellHash,
             buyOrder.maker,
             sellOrder.maker,
             buyOrder.marketId,
             buyOrder.outcome,
-            buyOrder.amount,
+            matchAmount,
             executionPrice
         );
     }
