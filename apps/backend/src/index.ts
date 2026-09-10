@@ -15,6 +15,7 @@ import orderRoutes from './routes/order.routes';
 import logRoutes from './routes/log.routes';
 import portfolioRoutes from './routes/portfolio.routes';
 import userRoutes from './routes/user.routes';
+import statsRoutes from './routes/stats.routes';
 
 // Routes
 app.use('/api/markets', marketRoutes);
@@ -22,6 +23,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'edge-protocol-backend' });

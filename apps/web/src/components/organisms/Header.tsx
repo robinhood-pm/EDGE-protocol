@@ -16,7 +16,7 @@ export function Header() {
             <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
           </Link>
           <nav className="hidden md:flex items-center gap-10 text-[13px] font-medium text-white/70">
-            <Link href="/" className="hover:text-white transition-colors">
+            <Link href="/markets" className="hover:text-white transition-colors">
               Markets
             </Link>
             <Link href="/portfolio" className="hover:text-white transition-colors">
