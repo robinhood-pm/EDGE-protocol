@@ -3,8 +3,10 @@ import MarketFactoryABI from './abis/MarketFactory.json';
 import ExchangeABI from './abis/Exchange.json';
 import FeeTreasuryABI from './abis/FeeTreasury.json';
 
+import { parseAbi } from 'viem';
+
 // ERC20 Minimal ABI for USDG interactions
-export const ERC20_ABI = [
+export const ERC20_ABI = parseAbi([
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
@@ -14,7 +16,7 @@ export const ERC20_ABI = [
   "function approve(address spender, uint256 amount) returns (bool)",
   "function transfer(address to, uint256 amount) returns (bool)",
   "function transferFrom(address from, address to, uint256 amount) returns (bool)"
-] as const;
+]);
 
 export const CONTRACT_ADDRESSES = {
   // Hardcoded or dynamically pulled from env for Robinhood Testnet

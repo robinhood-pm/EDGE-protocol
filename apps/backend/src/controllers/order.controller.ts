@@ -40,6 +40,13 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid cryptographic signature. Signer mismatch." });
     }
 
+    const network = process.env.NETWORK || 'TESTNET';
+
+    // Upsert user to prevent foreign key constraint violation
+    await supabase
+      .from('users')
+      .upsert({ wallet_address, network }, { onConflict: 'wallet_address, network' });
+
     const { data, error } = await supabase
       .from('orders')
       .insert([

@@ -31,12 +31,14 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
   });
 
   useEffect(() => {
+    if (!market) return;
+    
     // Subscribe to realtime orders for this market
     const channel = supabase
-      .channel(`orders-${marketId}`)
+      .channel(`orders-${market.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `market_id=eq.${marketId}` },
+        { event: '*', schema: 'public', table: 'orders', filter: `market_id=eq.${market.id}` },
         (payload) => {
           console.log('Order changed:', payload);
           refetch(); // Refetch orderbook
@@ -47,7 +49,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [marketId, refetch]);
+  }, [market, refetch]);
 
   if (isLoading) {
     return (
