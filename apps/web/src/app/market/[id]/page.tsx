@@ -1,15 +1,69 @@
-import React from 'react';
+"use client";
+
+import React, { use, useEffect, useState } from 'react';
 import { Header } from '@/components/organisms/Header';
 import { CategoryTabs } from '@/components/organisms/CategoryTabs';
 import { TradePanel } from '@/components/organisms/TradePanel';
 import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/Badge';
-import { Share, Settings, Settings2 } from 'lucide-react';
-import marketDetailData from '@/data/market_detail.json';
+import { Share, Settings, Settings2, Loader2 } from 'lucide-react';
 import { MarketDetail } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@supabase/supabase-js';
 
-export default function MarketPage() {
-  const market = marketDetailData as MarketDetail;
+// Setup Supabase Client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export default function MarketPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const marketId = resolvedParams.id;
+  
+  const { data: market, isLoading, error, refetch } = useQuery({
+    queryKey: ['market', marketId],
+    queryFn: async () => {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${backendUrl}/api/markets/${marketId}`);
+      if (!res.ok) throw new Error('Failed to fetch market');
+      return res.json() as Promise<MarketDetail>;
+    }
+  });
+
+  useEffect(() => {
+    // Subscribe to realtime orders for this market
+    const channel = supabase
+      .channel(`orders-${marketId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `market_id=eq.${marketId}` },
+        (payload) => {
+          console.log('Order changed:', payload);
+          refetch(); // Refetch orderbook
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [marketId, refetch]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted" />
+      </div>
+    );
+  }
+
+  if (error || !market) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="text-red-500">Error loading market</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -44,6 +44,7 @@ export const createOrder = async (req: Request, res: Response) => {
       .insert([
         {
           market_id,
+          network: process.env.NETWORK || 'TESTNET',
           wallet_address,
           side,
           order_type,

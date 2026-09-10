@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { GlobalLoadingOverlay } from "@/components/organisms/GlobalLoadingOverlay";
 import { Web3Provider } from "@/components/providers/Web3Provider";
+import { Toaster } from "react-hot-toast";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -36,6 +37,7 @@ export default function RootLayout({
         <Web3Provider>
           <GlobalLoadingOverlay />
           {children}
+          <Toaster position="bottom-right" toastOptions={{ className: 'dark:bg-neutral-900 dark:text-white border border-neutral-800' }} />
         </Web3Provider>
       </body>
     </html>

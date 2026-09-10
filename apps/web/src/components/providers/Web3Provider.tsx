@@ -6,9 +6,11 @@ import {
   getDefaultConfig,
   darkTheme,
 } from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider, useAccount } from "wagmi";
 import { defineChain } from "viem";
+import { toast } from "react-hot-toast";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { logActivity } from "@/lib/logger";
 import "@rainbow-me/rainbowkit/styles.css";
 
 const robinhoodChain = defineChain({
@@ -45,6 +47,26 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 
+// Internal component to listen for connection events
+function WalletEventsListener() {
+  const { isConnected, isConnecting, address } = useAccount();
+  const prevConnectedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isConnected && !prevConnectedRef.current) {
+      toast.success(`Wallet connected: ${address?.substring(0,6)}...${address?.substring(address.length - 4)}`);
+      logActivity('WALLET_CONNECT', { method: 'RainbowKit' }, address);
+      prevConnectedRef.current = true;
+    } else if (!isConnected && !isConnecting && prevConnectedRef.current) {
+      toast.error("Wallet disconnected");
+      logActivity('WALLET_DISCONNECT', { method: 'RainbowKit' }, address);
+      prevConnectedRef.current = false;
+    }
+  }, [isConnected, isConnecting, address]);
+
+  return null;
+}
+
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config as any}>
@@ -57,6 +79,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
             overlayBlur: "small",
           })}
         >
+          <WalletEventsListener />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

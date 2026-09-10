@@ -1,12 +1,24 @@
+"use client";
+
 import React from 'react';
 import { Header } from '@/components/organisms/Header';
 import { CategoryTabs } from '@/components/organisms/CategoryTabs';
 import { MarketCard } from '@/components/molecules/MarketCard';
-import marketsData from '@/data/markets.json';
 import { Market } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, BarChart3 } from 'lucide-react';
 
 export default function Home() {
-  const markets = marketsData as Market[];
+  const { data: markets = [], isLoading } = useQuery({
+    queryKey: ['markets'],
+    queryFn: async () => {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${backendUrl}/api/markets`);
+      if (!res.ok) throw new Error('Failed to fetch markets');
+      const data = await res.json();
+      return data.markets as Market[];
+    }
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -17,11 +29,27 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content Area */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {markets.map((market) => (
-                <MarketCard key={market.id} market={market} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-muted" />
+              </div>
+            ) : markets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center border border-border border-dashed rounded-2xl bg-white/5">
+                <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center mb-4 text-muted">
+                  <BarChart3 className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No Markets Available</h3>
+                <p className="text-muted text-sm max-w-sm mx-auto mb-6">
+                  There are currently no active prediction markets. Check back later or create one if you're an admin.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {markets.map((market) => (
+                  <MarketCard key={market.id} market={market} />
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Right Sidebar */}

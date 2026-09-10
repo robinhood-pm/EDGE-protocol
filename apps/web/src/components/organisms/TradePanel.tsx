@@ -5,8 +5,10 @@ import { Button } from '@/components/atoms/Button';
 import { Settings2, Loader2 } from 'lucide-react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignTypedData } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
+import { toast } from 'react-hot-toast';
 import { CONTRACT_ADDRESSES, ABIS } from '@/lib/contracts';
 import { MarketDetail } from '@/types';
+import { logActivity } from '@/lib/logger';
 
 interface TradePanelProps {
   market: MarketDetail;
@@ -15,6 +17,7 @@ interface TradePanelProps {
 export function TradePanel({ market }: TradePanelProps) {
   const { address, isConnected } = useAccount();
   const [amountStr, setAmountStr] = useState<string>('5');
+  const [selectedOutcome, setSelectedOutcome] = useState<0 | 1>(1); // 1 = YES/UP, 0 = NO/DOWN
   const amountToSpend = parseUnits(amountStr || '0', 6);
   
   // Read USDG Balance
@@ -137,15 +140,27 @@ export function TradePanel({ market }: TradePanelProps) {
         throw new Error(errorData.error || 'Failed to submit order to backend');
       }
 
-      alert("Order submitted successfully to the Orderbook!");
+      toast.success("Order submitted successfully to the Orderbook!");
+      logActivity('CREATE_ORDER', {
+        market_id: market.id,
+        side: 'BUY',
+        amount: amountToSpend.toString()
+      }, address);
       
     } catch (e: any) {
       console.error("Order submission failed:", e);
-      alert(`Error: ${e.message}`);
+      toast.error(`Error: ${e.message}`);
+      logActivity('ERROR', {
+        type: 'ORDER_CREATION_FAILED',
+        error: e.message,
+        market_id: market.id
+      }, address);
     } finally {
       setIsSigning(false);
     }
   };
+
+  const outcomePrice = selectedOutcome === 1 ? market.currentPrice : (1 - market.currentPrice);
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -169,10 +184,18 @@ export function TradePanel({ market }: TradePanelProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <Button variant="yes" className="h-12 text-sm font-bold shadow-sm shadow-yes/20" onClick={() => setAmountStr('5')}>
+          <Button 
+            variant={selectedOutcome === 1 ? "yes" : "secondary"} 
+            className={`h-12 text-sm font-bold shadow-sm ${selectedOutcome === 1 ? 'shadow-yes/20' : ''}`} 
+            onClick={() => setSelectedOutcome(1)}
+          >
             UP {market.currentPrice * 100}¢
           </Button>
-          <Button variant="secondary" className="h-12 text-sm font-bold text-foreground" onClick={() => setAmountStr('5')}>
+          <Button 
+            variant={selectedOutcome === 0 ? "no" : "secondary"} 
+            className={`h-12 text-sm font-bold ${selectedOutcome === 0 ? 'text-white' : 'text-foreground'}`} 
+            onClick={() => setSelectedOutcome(0)}
+          >
             DOWN {(1 - market.currentPrice) * 100}¢
           </Button>
         </div>
@@ -201,12 +224,12 @@ export function TradePanel({ market }: TradePanelProps) {
           </Button>
         ) : (
           <Button 
-            variant="yes" 
-            className="w-full mb-4 font-bold" 
-            onClick={() => handleBuy(1)} 
+            variant={selectedOutcome === 1 ? "yes" : "no"} 
+            className="w-full mb-4 font-bold text-white" 
+            onClick={() => handleBuy(selectedOutcome)} 
             disabled={isSigning}
           >
-            {isSigning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign Buy Order'}
+            {isSigning ? <Loader2 className="w-4 h-4 animate-spin" /> : `Sign Buy ${selectedOutcome === 1 ? 'UP' : 'DOWN'} Order`}
           </Button>
         )}
         
