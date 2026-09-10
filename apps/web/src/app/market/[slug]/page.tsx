@@ -11,7 +11,9 @@ import { MarketDetail } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { toast } from 'react-hot-toast';
 
 // Setup Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -22,7 +24,10 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
   const resolvedParams = use(params);
   const marketId = resolvedParams.slug;
   const [activeTab, setActiveTab] = useState<'orderbook' | 'positions' | 'orders' | 'resolution'>('orderbook');
+  const [chartRange, setChartRange] = useState<'1H' | '6H' | '24H' | '7D' | 'ALL'>('24H');
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   // Query for Market Data
   const { data: market, isLoading, error, refetch } = useQuery({
@@ -35,11 +40,22 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
     }
   });
 
+  // Query for Live Trades
+  const { data: tradesData, refetch: refetchTrades } = useQuery({
+    queryKey: ['trades', marketId, chartRange],
+    queryFn: async () => {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl}/api/markets/${marketId}/trades?range=${chartRange}`);
+      if (!res.ok) throw new Error('Failed to fetch trades');
+      return res.json();
+    }
+  });
+
   useEffect(() => {
     if (!market) return;
     
     // Subscribe to realtime orders for this market
-    const channel = supabase
+    const ordersChannel = supabase
       .channel(`orders-${market.id}`)
       .on(
         'postgres_changes',
@@ -51,13 +67,28 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
       )
       .subscribe();
 
+    // Subscribe to realtime trades for this market
+    const tradesChannel = supabase
+      .channel(`trades-${market.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'trades', filter: `market_id=eq.${market.id}` },
+        (payload) => {
+          console.log('New trade:', payload);
+          refetchTrades(); // Refetch chart data
+          refetch(); // Also refetch market data (volume, etc)
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(tradesChannel);
     };
-  }, [marketId, refetch]);
+  }, [marketId, refetch, refetchTrades, market]);
 
   // Query for Open Orders
-  const { data: openOrders } = useQuery({
+  const { data: openOrders, refetch: refetchOpenOrders } = useQuery({
     queryKey: ['openOrders', marketId, address],
     queryFn: async () => {
       if (!address) return [];
@@ -72,6 +103,40 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
     },
     enabled: !!address && !!marketId
   });
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!address) return;
+    try {
+      setCancelingOrderId(orderId);
+      const message = `Cancel Order ${orderId}`;
+      const signature = await signMessageAsync({ message });
+
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl}/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature, wallet_address: address }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to cancel order');
+      }
+
+      toast.success('Order cancelled successfully');
+      refetchOpenOrders();
+      refetch();
+    } catch (e: any) {
+      console.error(e);
+      if (e.message?.includes('User rejected') || e.name === 'UserRejectedRequestError') {
+        toast.error('Signature rejected. Order was not cancelled.');
+      } else {
+        toast.error(e.message || 'Error cancelling order');
+      }
+    } finally {
+      setCancelingOrderId(null);
+    }
+  };
 
   // Query for Positions
   const { data: positions } = useQuery({
@@ -164,9 +229,20 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
             </div>
 
             {/* Chart Area */}
+            <div className="flex items-center gap-2 mb-2">
+              {['1H', '6H', '24H', '7D', 'ALL'].map(range => (
+                <button
+                  key={range}
+                  onClick={() => setChartRange(range as any)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${chartRange === range ? 'bg-neutral-800 text-white' : 'text-muted hover:text-white hover:bg-neutral-800/50'}`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
             <div className="h-80 w-full relative">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={market.chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                <AreaChart data={tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -238,7 +314,10 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 {activeTab === 'positions' && (
                   <div className="py-4 text-sm">
                     {!address ? (
-                      <div className="text-center text-muted py-8">Please connect wallet to view positions.</div>
+                      <div className="flex flex-col items-center justify-center py-8 gap-3">
+                        <div className="text-sm text-muted">Connect your wallet to view positions</div>
+                        <ConnectButton />
+                      </div>
                     ) : !positions ? (
                       <div className="text-center text-muted py-8">No positions found for this market.</div>
                     ) : (
@@ -263,21 +342,34 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 {activeTab === 'orders' && (
                   <div className="py-4">
                     {!address ? (
-                      <div className="text-center text-sm text-muted py-8">Please connect wallet to view open orders.</div>
+                      <div className="flex flex-col items-center justify-center py-8 gap-3">
+                        <div className="text-sm text-muted">Connect your wallet to view open orders</div>
+                        <ConnectButton />
+                      </div>
                     ) : !openOrders || openOrders.length === 0 ? (
                       <div className="text-center text-sm text-muted py-8">No open orders found.</div>
                     ) : (
                       <div className="flex flex-col gap-2 font-mono text-sm">
-                        <div className="grid grid-cols-[80px_1fr_100px] text-xs text-muted pb-2 border-b border-border">
+                        <div className="grid grid-cols-[80px_1fr_100px_80px] text-xs text-muted pb-2 border-b border-border">
                           <div>Side</div>
                           <div className="text-right">Shares</div>
                           <div className="text-right">Price</div>
+                          <div className="text-right">Action</div>
                         </div>
                         {openOrders.map(order => (
-                          <div key={order.id} className="grid grid-cols-[80px_1fr_100px] py-2 border-b border-border/30">
+                          <div key={order.id} className="grid grid-cols-[80px_1fr_100px_80px] items-center py-2 border-b border-border/30">
                             <div className={order.side === 'YES' ? 'text-yes font-bold' : 'text-no font-bold'}>{order.side}</div>
                             <div className="text-right">{order.amount}</div>
                             <div className="text-right">{order.price / 100}¢</div>
+                            <div className="text-right">
+                              <button 
+                                onClick={() => handleCancelOrder(order.id)}
+                                disabled={cancelingOrderId === order.id}
+                                className="text-xs text-red-500 hover:text-red-400 disabled:opacity-50"
+                              >
+                                {cancelingOrderId === order.id ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Cancel'}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

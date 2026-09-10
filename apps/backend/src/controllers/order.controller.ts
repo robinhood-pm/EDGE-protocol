@@ -83,7 +83,36 @@ export const createOrder = async (req: Request, res: Response) => {
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // In production, we should require a signature to cancel
+    const { signature, wallet_address } = req.body;
+
+    if (!signature || !wallet_address) {
+      return res.status(400).json({ error: "Missing signature or wallet_address" });
+    }
+
+    // Verify the signature (message should be "Cancel Order {id}")
+    const message = `Cancel Order ${id}`;
+    
+    const { verifyMessage } = require('ethers');
+    const recoveredAddress = verifyMessage(message, signature);
+
+    if (recoveredAddress.toLowerCase() !== wallet_address.toLowerCase()) {
+      return res.status(401).json({ error: "Invalid signature. Signer mismatch." });
+    }
+
+    // Ensure the order belongs to the wallet
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .select('wallet_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !orderData) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (orderData.wallet_address.toLowerCase() !== wallet_address.toLowerCase()) {
+      return res.status(403).json({ error: 'Unauthorized to cancel this order' });
+    }
 
     const { data, error } = await supabase
       .from('orders')

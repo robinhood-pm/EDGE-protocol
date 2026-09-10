@@ -58,16 +58,68 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
                             // Update DB
                             await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', buy.id);
                             await supabase.from('orders').update({ status: 'FILLED', transaction_hash: receipt.hash }).eq('id', sell.id);
+
+                            // Record trade for chart data
+                            const tradePrice = Number(buy.price); // The price the trade executed at
+                            const tradeAmount = Math.min(Number(buy.amount), Number(sell.amount));
+                            await supabase.from('trades').insert({
+                                network,
+                                market_id: marketId,
+                                buy_order_id: buy.id,
+                                sell_order_id: sell.id,
+                                price: tradePrice,
+                                amount: tradeAmount,
+                                buyer_address: buy.wallet_address,
+                                seller_address: sell.wallet_address,
+                                transaction_hash: receipt.hash,
+                            });
+
+                            // Update market volume and probability
+                            const tradeVolume = tradePrice * tradeAmount;
+                            try {
+                                await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
+                            } catch (err) {
+                                // Fallback: direct update if RPC doesn't exist
+                                const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
+                                if (m) {
+                                    await supabase.from('markets').update({ total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, current_yes_probability: tradePrice * 100 }).eq('id', marketId).eq('network', network);
+                                }
+                            }
                         } else {
                             // Mock off-chain settlement for MVP if no relayer key
                             console.log(`[Matching Engine] Mock settlement (No Relayer Key)`);
                             await supabase.from('orders').update({ status: 'FILLED' }).eq('id', buy.id);
                             await supabase.from('orders').update({ status: 'FILLED' }).eq('id', sell.id);
+
+                            // Record trade for chart data (mock settlement)
+                            const tradePrice = Number(buy.price);
+                            const tradeAmount = Math.min(Number(buy.amount), Number(sell.amount));
+                            await supabase.from('trades').insert({
+                                network,
+                                market_id: marketId,
+                                buy_order_id: buy.id,
+                                sell_order_id: sell.id,
+                                price: tradePrice,
+                                amount: tradeAmount,
+                                buyer_address: buy.wallet_address,
+                                seller_address: sell.wallet_address,
+                            });
+
+                            // Update market stats
+                            const { data: mkt } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
+                            if (mkt) {
+                                const tradeVolume = tradePrice * tradeAmount;
+                                await supabase.from('markets').update({ 
+                                    total_volume_usdg: Number(mkt.total_volume_usdg) + tradeVolume,
+                                    current_yes_probability: tradePrice * 100 
+                                }).eq('id', marketId).eq('network', network);
+                            }
                         }
 
                         // Mark as filled locally to avoid double matching in this loop
                         buy.status = 'FILLED';
                         sell.status = 'FILLED';
+                        console.log(`[Matching Engine] Trade recorded successfully.`);
                     } catch (e) {
                         console.error(`[Matching Engine] Match failed on-chain:`, e);
                     }

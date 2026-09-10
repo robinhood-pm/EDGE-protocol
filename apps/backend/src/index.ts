@@ -16,9 +16,11 @@ import logRoutes from './routes/log.routes';
 import portfolioRoutes from './routes/portfolio.routes';
 import userRoutes from './routes/user.routes';
 import statsRoutes from './routes/stats.routes';
+import tradesRoutes from './routes/trades.routes';
 
 // Routes
 app.use('/api/markets', marketRoutes);
+app.use('/api/markets', tradesRoutes); // /api/markets/:marketId/trades
 app.use('/api/orders', orderRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/portfolio', portfolioRoutes);

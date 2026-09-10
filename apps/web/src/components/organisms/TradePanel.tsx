@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Settings2, Loader2 } from 'lucide-react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignTypedData } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseUnits, formatUnits } from 'viem';
 import { toast } from 'react-hot-toast';
 import { CONTRACT_ADDRESSES, ABIS } from '@/lib/contracts';
@@ -165,7 +166,12 @@ export function TradePanel({ market }: TradePanelProps) {
       
     } catch (e: any) {
       console.error("Order submission failed:", e);
-      toast.error(`Error: ${e.message}`);
+      // Detect user wallet rejection
+      if (e.message?.includes('User rejected') || e.message?.includes('user rejected') || e.name === 'UserRejectedRequestError') {
+        toast.error('Transaction rejected by wallet. No order was placed.');
+      } else {
+        toast.error(`Error: ${e.shortMessage || e.message}`);
+      }
       logActivity('ERROR', {
         type: 'ORDER_CREATION_FAILED',
         error: e.message,
@@ -227,7 +233,15 @@ export function TradePanel({ market }: TradePanelProps) {
         </div>
 
         {!isConnected ? (
-          <div className="text-center text-xs text-muted mb-4 pt-2">Please connect your wallet</div>
+          <div className="flex justify-center mb-4 pt-2">
+            <ConnectButton.Custom>
+              {({ openConnectModal }) => (
+                <Button onClick={openConnectModal} className="w-full font-bold">
+                  Connect Wallet
+                </Button>
+              )}
+            </ConnectButton.Custom>
+          </div>
         ) : isInsufficient ? (
           <div className="text-center text-xs text-red-500 font-medium mb-4 pt-2">Insufficient USDG Funds</div>
         ) : needsApproval ? (

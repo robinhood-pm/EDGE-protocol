@@ -5,6 +5,8 @@ import { useAccount } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Briefcase, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { Header } from '@/components/organisms/Header';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function PortfolioPage() {
   const { address, isConnected } = useAccount();
@@ -22,10 +24,14 @@ export default function PortfolioPage() {
 
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <Briefcase className="w-16 h-16 text-muted mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Connect Wallet</h1>
-        <p className="text-muted">Please connect your wallet to view your portfolio.</p>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1 px-4 text-center">
+          <Briefcase className="w-16 h-16 text-muted mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Connect Wallet</h1>
+          <p className="text-muted mb-6">Please connect your wallet to view your portfolio.</p>
+          <ConnectButton />
+        </div>
       </div>
     );
   }
@@ -34,7 +40,9 @@ export default function PortfolioPage() {
   const totalInvested = positions.reduce((acc: number, pos: any) => acc + pos.totalInvested, 0);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+    <div className="max-w-4xl mx-auto px-4 py-8 mt-16">
       <Link href="/" className="inline-flex items-center text-sm font-medium text-muted hover:text-foreground mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Markets
@@ -95,6 +103,7 @@ export default function PortfolioPage() {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }

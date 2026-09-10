@@ -152,25 +152,40 @@ export const getMarketById = async (req: Request, res: Response) => {
     const initialPrice = 0.50; // default start
     const priceChangePercent = ((currentPrice - initialPrice) / initialPrice) * 100;
 
-    // TODO: Saat ini kita belum memiliki tabel trades di database untuk menyimpan history pergerakan harga. Sebagai solusinya, backend akan menyimulasikan data riwayat harga yang bergerak menuju harga riil saat ini (currentPrice) agar grafiknya bisa tampil interaktif dengan Recharts. Nanti, saat Anda mengembangkan sistem indexer on-chain, kita bisa menggantinya dengan data historis sungguhan
-    const chartData = [];
-    const pointsCount = 20;
-    let mockPrice = initialPrice;
-    for (let i = 0; i < pointsCount; i++) {
-      const isLast = i === pointsCount - 1;
-      if (isLast) {
-        mockPrice = currentPrice;
-      } else {
-        // Random walk towards current price
-        const step = (currentPrice - mockPrice) / (pointsCount - i) + (Math.random() - 0.5) * 0.05;
-        mockPrice = Math.max(0.01, Math.min(0.99, mockPrice + step));
+    // Fetch real trade data for chart, fallback to mock if no trades exist
+    const { data: tradesData } = await supabase
+      .from('trades')
+      .select('price, created_at')
+      .eq('market_id', marketData.id)
+      .eq('network', network)
+      .order('created_at', { ascending: true });
+
+    let chartData;
+    if (tradesData && tradesData.length > 0) {
+      // Use real trades
+      chartData = tradesData.map(trade => ({
+        time: new Date(trade.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        price: Math.round(Number(trade.price) * 100)
+      }));
+    } else {
+      // Generate mock data (random walk toward currentPrice) for new markets with no trades
+      chartData = [];
+      const pointsCount = 20;
+      let mockPrice = initialPrice;
+      for (let i = 0; i < pointsCount; i++) {
+        const isLast = i === pointsCount - 1;
+        if (isLast) {
+          mockPrice = currentPrice;
+        } else {
+          const step = (currentPrice - mockPrice) / (pointsCount - i) + (Math.random() - 0.5) * 0.05;
+          mockPrice = Math.max(0.01, Math.min(0.99, mockPrice + step));
+        }
+        const timePoint = new Date(now.getTime() - (pointsCount - i) * 60 * 60 * 1000);
+        chartData.push({
+          time: timePoint.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          price: Math.round(mockPrice * 100)
+        });
       }
-      
-      const timePoint = new Date(now.getTime() - (pointsCount - i) * 60 * 60 * 1000);
-      chartData.push({
-        time: timePoint.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        price: Math.round(mockPrice * 100)
-      });
     }
 
     // Format final response to match frontend expectations
