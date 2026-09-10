@@ -50,7 +50,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
       if (!res.ok) throw new Error('Failed to fetch trades');
       return res.json();
     },
-    refetchInterval: 10000, // Poll every 10s as a fallback to Realtime
+    refetchInterval: 3000, // Poll every 3s for near-realtime chart updates
   });
 
   useEffect(() => {
@@ -246,7 +246,13 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
               <FloatingTransactions realTrades={tradesData?.trades || []} />
               <ResponsiveContainer width="100%" height="100%">
                 {(() => {
-                  const data = tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData;
+                  const rawData = tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData;
+                  // Sort by time and ensure the last point is always "now"
+                  const sorted = [...(rawData || [])].sort((a: any, b: any) => new Date(a.time).getTime() - new Date(b.time).getTime());
+                  const latestPrice = sorted.length > 0 ? sorted[sorted.length - 1].price : market.currentPrice;
+                  const now = new Date().toISOString();
+                  // Add a "now" point if the last data point isn't recent
+                  const data = sorted.length > 0 ? [...sorted, { time: now, price: latestPrice }] : sorted;
                   const lastPoint = data?.[data.length - 1];
                   return (
                     <AreaChart data={data} margin={{ top: 10, right: 40, left: 0, bottom: 0 }}>
