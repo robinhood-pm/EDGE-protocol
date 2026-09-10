@@ -1,0 +1,65 @@
+[
+  {
+    "title": "Will BTC trade above $150,000 before December 31, 2026?",
+    "description": "Resolves to YES if the approved oracle reports a BTC/USD price >= $150,000 at any valid observation before the deadline.",
+    "resolution_rules": "Based on official Chainlink BTC/USD price feed on Robinhood Chain.",
+    "image_url": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    "ipfs_hash": "QmHashBTC150k"
+  },
+  {
+    "title": "Will the Fed cut rates at the next FOMC meeting?",
+    "description": "Resolves to YES if the Federal Reserve announces a rate cut at the upcoming FOMC meeting.",
+    "resolution_rules": "Based on the official press release from the Federal Reserve Board.",
+    "image_url": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=500",
+    "ipfs_hash": "QmHashFedCut"
+  },
+  {
+    "title": "Will AAPL reference price close above $250 this Friday?",
+    "description": "Resolves to YES if the AAPL Stock Token reference price closes strictly above $250 on this Friday's trading session.",
+    "resolution_rules": "Based on the official Robinhood Chain AAPL reference price oracle at market close.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    "ipfs_hash": "QmHashAAPL250"
+  },
+  {
+    "title": "Will US CPI YoY print below 3.0%?",
+    "description": "Resolves to YES if the next US Consumer Price Index (CPI) year-over-year report is below 3.0%.",
+    "resolution_rules": "Based on the official data release by the U.S. Bureau of Labor Statistics.",
+    "image_url": "https://images.unsplash.com/photo-1580519542036-ed47f3e42214?auto=format&fit=crop&q=80&w=500",
+    "ipfs_hash": "QmHashCPI3"
+  },
+  {
+    "title": "Will ETH outperform BTC this week?",
+    "description": "Resolves to YES if the percentage gain of ETH/USD is strictly greater than BTC/USD over the 7-day period ending Sunday at 23:59 UTC.",
+    "resolution_rules": "Based on Chainlink price feeds for ETH and BTC on Robinhood Chain.",
+    "image_url": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    "ipfs_hash": "QmHashETHvsBTC"
+  },
+  {
+    "title": "Will unemployment exceed 4.5%?",
+    "description": "Resolves to YES if the next U.S. unemployment rate report prints strictly greater than 4.5%.",
+    "resolution_rules": "Based on the official data release by the U.S. Bureau of Labor Statistics.",
+    "image_url": "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&q=80&w=500",
+    "ipfs_hash": "QmHashUnemp"
+  },
+  {
+    "title": "Will TSLA reference price gain >5% after earnings?",
+    "description": "Resolves to YES if the TSLA Stock Token reference price closes more than 5% higher on the day of its next earnings release compared to the previous day's close.",
+    "resolution_rules": "Based on the official Robinhood Chain TSLA reference price oracle.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
+    "ipfs_hash": "QmHashTSLA5"
+  },
+  {
+    "title": "Will SOL close above $300?",
+    "description": "Resolves to YES if the SOL/USD price oracle reports a price >= $300 at any point before the end of the year.",
+    "resolution_rules": "Based on the official Chainlink SOL/USD price feed.",
+    "image_url": "https://cryptologos.cc/logos/solana-sol-logo.png",
+    "ipfs_hash": "QmHashSOL300"
+  },
+  {
+    "title": "Will NVDA outperform SPY this week?",
+    "description": "Resolves to YES if the NVDA Stock Token reference price percentage change is strictly greater than the SPY Stock Token reference price percentage change for the week.",
+    "resolution_rules": "Based on official Robinhood Chain reference price oracles for NVDA and SPY.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/1024px-Nvidia_logo.svg.png",
+    "ipfs_hash": "QmHashNVDASPY"
+  }
+]

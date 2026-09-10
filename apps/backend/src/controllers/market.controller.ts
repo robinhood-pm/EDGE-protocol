@@ -129,3 +129,42 @@ export const getMarketById = async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const createMarket = async (req: Request, res: Response) => {
+  try {
+    const { id, title, description, image_url, resolution_rules, close_time, resolver_address } = req.body;
+    const network = process.env.NETWORK || 'TESTNET';
+
+    if (!id || !title || !close_time || !resolver_address) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { data, error } = await supabase
+      .from('markets')
+      .insert([
+        {
+          id: id.toString(),
+          network,
+          title,
+          description,
+          image_url,
+          resolution_rules,
+          close_time: new Date(close_time * 1000).toISOString(),
+          resolver_address,
+          status: 'OPEN',
+          total_volume_usdg: 0,
+          current_yes_probability: 50.0
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(201).json({ market: data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
