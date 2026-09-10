@@ -50,7 +50,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
       if (!res.ok) throw new Error('Failed to fetch trades');
       return res.json();
     },
-    refetchInterval: 3000, // Poll every 3s for near-realtime chart updates
+    refetchInterval: 1500, // Poll every 1.5s for near-realtime chart updates
   });
 
   useEffect(() => {
