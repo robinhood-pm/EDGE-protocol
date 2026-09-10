@@ -190,12 +190,12 @@ export default function PortfolioPage() {
                     <div className="flex gap-3 sm:gap-6 shrink-0 bg-black/40 p-3 rounded-xl border border-white/5">
                       <div className="text-center px-2">
                         <div className="text-[10px] text-muted font-bold mb-1 uppercase tracking-wider">YES Shares</div>
-                        <div className="font-bold text-yes text-lg">{pos.yesShares}</div>
+                        <div className="font-bold text-yes text-lg">{Number(pos.yesShares).toFixed(1)}</div>
                       </div>
                       <div className="w-px bg-white/10"></div>
                       <div className="text-center px-2">
                         <div className="text-[10px] text-muted font-bold mb-1 uppercase tracking-wider">NO Shares</div>
-                        <div className="font-bold text-no text-lg">{pos.noShares}</div>
+                        <div className="font-bold text-no text-lg">{Number(pos.noShares).toFixed(1)}</div>
                       </div>
                     </div>
                   </div>
@@ -249,8 +249,8 @@ export default function PortfolioPage() {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-white/80">{order.order_type}</td>
-                        <td className="py-4 px-6 font-medium">{order.price}¢</td>
-                        <td className="py-4 px-6 font-medium">{order.amount}</td>
+                        <td className="py-4 px-6 font-medium">{Number(order.price).toFixed(1)}¢</td>
+                        <td className="py-4 px-6 font-medium">{Number(order.amount).toFixed(1)}</td>
                         <td className="py-4 px-6">
                           <span className={`flex items-center w-fit px-2.5 py-1 rounded-md text-xs font-semibold border ${
                             order.status === 'FILLED' ? 'bg-green-500/10 text-green-400 border-green-500/20' :

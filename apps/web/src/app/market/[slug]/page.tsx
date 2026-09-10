@@ -10,10 +10,11 @@ import { Share, Settings, Settings2, Loader2 } from 'lucide-react';
 import { MarketDetail } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, Label } from 'recharts';
 import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { toast } from 'react-hot-toast';
+import { FloatingTransactions } from '@/components/organisms/FloatingTransactions';
 
 // Setup Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -242,24 +243,49 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
               ))}
             </div>
             <div className="h-80 w-full relative">
+              <FloatingTransactions realTrades={tradesData?.trades || []} />
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="time" hide />
-                  <YAxis domain={['dataMin - 10', 'dataMax + 10']} hide />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #333' }}
-                    labelStyle={{ color: '#888' }}
-                    itemStyle={{ color: '#fff' }}
-                    formatter={(value: any) => [`${value}¢`, 'Price']}
-                  />
-                  <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
-                </AreaChart>
+                {(() => {
+                  const data = tradesData?.trades?.length > 0 ? tradesData.trades : market.chartData;
+                  const lastPoint = data?.[data.length - 1];
+                  return (
+                    <AreaChart data={data} margin={{ top: 10, right: 40, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" hide />
+                      <YAxis domain={['dataMin - 10', 'dataMax + 10']} hide />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #333' }}
+                        labelStyle={{ color: '#888' }}
+                        itemStyle={{ color: '#fff' }}
+                        formatter={(value: any) => [`${Number(value).toFixed(1)}¢`, 'Price']}
+                      />
+                      <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
+                      {lastPoint && (
+                        <ReferenceDot 
+                          x={lastPoint.time} 
+                          y={lastPoint.price} 
+                          r={4} 
+                          fill="#10b981" 
+                          stroke="#1c1c1c" 
+                          strokeWidth={2}
+                        >
+                          <Label 
+                            value={`${Number(lastPoint.price).toFixed(1)}¢`} 
+                            position="right" 
+                            fill="#10b981" 
+                            fontWeight="bold"
+                            className="animate-pulse"
+                          />
+                        </ReferenceDot>
+                      )}
+                    </AreaChart>
+                  );
+                })()}
               </ResponsiveContainer>
             </div>
 
@@ -286,16 +312,16 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                       {market.orderBook.asks.slice().reverse().map((ask, i) => (
                         <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
                           <div className="absolute top-0 right-0 h-full bg-no/10" style={{width: `${(ask.total / 150) * 100}%`}} />
-                          <div className="text-no z-10">{ask.price}¢</div>
-                          <div className="text-right z-10">{ask.shares}</div>
+                          <div className="text-no z-10">{Number(ask.price).toFixed(1)}¢</div>
+                          <div className="text-right z-10">{Number(ask.shares).toFixed(1)}</div>
                           <div className="text-right z-10">${ask.total.toFixed(2)}</div>
                         </div>
                       ))}
                     </div>
 
                     <div className="flex justify-between items-center text-xs text-muted my-2 border-y border-border py-2">
-                      <span>Last: {Math.round(market.currentPrice * 100)}¢</span>
-                      <span>Spread: {market.orderBook.asks[0]?.price && market.orderBook.bids[0]?.price ? `${market.orderBook.asks[0].price - market.orderBook.bids[0].price}¢` : 'N/A'}</span>
+                      <span>Last: {(market.currentPrice * 100).toFixed(1)}¢</span>
+                      <span>Spread: {market.orderBook.asks[0]?.price && market.orderBook.bids[0]?.price ? `${Number(market.orderBook.asks[0].price - market.orderBook.bids[0].price).toFixed(1)}¢` : 'N/A'}</span>
                     </div>
 
                     {/* Bids (YES) */}
@@ -303,8 +329,8 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                       {market.orderBook.bids.map((bid, i) => (
                         <div key={i} className="grid grid-cols-[100px_1fr_100px] gap-4 relative">
                           <div className="absolute top-0 right-0 h-full bg-yes/10" style={{width: `${(bid.total / 150) * 100}%`}} />
-                          <div className="text-yes z-10">{bid.price}¢</div>
-                          <div className="text-right z-10">{bid.shares}</div>
+                          <div className="text-yes z-10">{Number(bid.price).toFixed(1)}¢</div>
+                          <div className="text-right z-10">{Number(bid.shares).toFixed(1)}</div>
                           <div className="text-right z-10">${bid.total.toFixed(2)}</div>
                         </div>
                       ))}
@@ -360,8 +386,8 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                         {openOrders.map(order => (
                           <div key={order.id} className="grid grid-cols-[80px_1fr_100px_80px] items-center py-2 border-b border-border/30">
                             <div className={order.side === 'YES' ? 'text-yes font-bold' : 'text-no font-bold'}>{order.side}</div>
-                            <div className="text-right">{order.amount}</div>
-                            <div className="text-right">{order.price / 100}¢</div>
+                            <div className="text-right">{Number(order.amount).toFixed(1)}</div>
+                            <div className="text-right">{(order.price / 100).toFixed(1)}¢</div>
                             <div className="text-right">
                               <button 
                                 onClick={() => handleCancelOrder(order.id)}

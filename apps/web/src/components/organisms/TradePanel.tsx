@@ -241,20 +241,18 @@ export function TradePanel({ market }: TradePanelProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <Button 
-            variant={selectedOutcome === 1 ? "yes" : "secondary"} 
-            className={`h-12 text-sm font-bold shadow-sm ${selectedOutcome === 1 ? 'shadow-yes/20' : ''}`} 
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl font-bold flex items-center justify-between transition-colors ${selectedOutcome === 1 ? 'bg-yes/20 text-yes border-2 border-yes' : 'bg-white/5 text-white/50 border-2 border-transparent hover:bg-white/10'}`}
             onClick={() => setSelectedOutcome(1)}
           >
-            UP {market.currentPrice * 100}¢
-          </Button>
-          <Button 
-            variant={selectedOutcome === 0 ? "no" : "secondary"} 
-            className={`h-12 text-sm font-bold ${selectedOutcome === 0 ? 'text-white' : 'text-foreground'}`} 
+            UP {(market.currentPrice * 100).toFixed(1)}¢
+          </button>
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl font-bold flex items-center justify-between transition-colors ${selectedOutcome === 0 ? 'bg-no/20 text-no border-2 border-no' : 'bg-white/5 text-white/50 border-2 border-transparent hover:bg-white/10'}`}
             onClick={() => setSelectedOutcome(0)}
           >
-            DOWN {(1 - market.currentPrice) * 100}¢
-          </Button>
+            DOWN {((1 - market.currentPrice) * 100).toFixed(1)}¢
+          </button>
         </div>
 
         <div className="flex items-center justify-between mb-3">
