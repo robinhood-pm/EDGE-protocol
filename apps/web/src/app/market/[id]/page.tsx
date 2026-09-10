@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header } from '@/components/organisms/Header';
 import { CategoryTabs } from '@/components/organisms/CategoryTabs';
+import { TradePanel } from '@/components/organisms/TradePanel';
 import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/Badge';
 import { Share, Settings, Settings2 } from 'lucide-react';
@@ -151,60 +152,8 @@ export default function MarketPage() {
           <aside className="w-full xl:w-[360px] flex-shrink-0">
             <div className="sticky top-20 flex flex-col gap-4">
               
-              {/* Terminal Box */}
-              <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                <div className="flex items-center justify-between p-4 bg-background border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-neutral-800 flex items-center justify-center overflow-hidden">
-                      <img src={market.image} alt={market.title} className="w-4 h-4 object-contain" />
-                    </div>
-                    <span className="font-bold text-sm truncate w-40">{market.title}</span>
-                  </div>
-                  <span className="text-yes font-bold text-sm">Up</span>
-                </div>
-
-                <div className="p-5">
-                  <div className="flex items-center gap-4 text-sm font-medium border-b border-border pb-4 mb-4">
-                    <button className="text-foreground">Buy</button>
-                    <button className="text-muted hover:text-foreground">Sell</button>
-                    <div className="ml-auto flex items-center gap-2 text-muted">
-                      <span>1-Tap</span> <Settings2 className="w-4 h-4" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <Button variant="yes" className="h-12 text-sm font-bold shadow-sm shadow-yes/20">UP 36¢</Button>
-                    <Button variant="secondary" className="h-12 text-sm font-bold text-foreground">DOWN 65¢</Button>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium">One-tap Buy</span>
-                    <button className="text-xs text-muted hover:text-foreground">✎ Edit</button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mb-6">
-                    <button className="bg-background border border-border rounded-lg py-2 flex flex-col items-center hover:bg-neutral-800 transition-colors">
-                      <span className="font-bold">$5</span>
-                      <span className="text-[10px] text-muted">Win <span className="text-yes">$14</span></span>
-                    </button>
-                    <button className="bg-background border border-border rounded-lg py-2 flex flex-col items-center hover:bg-neutral-800 transition-colors">
-                      <span className="font-bold">$25</span>
-                      <span className="text-[10px] text-muted">Win <span className="text-yes">$68</span></span>
-                    </button>
-                    <button className="bg-background border border-border rounded-lg py-2 flex flex-col items-center hover:bg-neutral-800 transition-colors">
-                      <span className="font-bold">$100</span>
-                      <span className="text-[10px] text-muted">Win <span className="text-yes">$260</span></span>
-                    </button>
-                  </div>
-
-                  <div className="text-center text-xs text-red-500 font-medium mb-4">Insufficient Funds</div>
-                  
-                  <div className="flex justify-between items-center text-sm font-medium pt-4 border-t border-border">
-                    <span className="text-muted">Balance</span>
-                    <span>$0.00</span>
-                  </div>
-                </div>
-              </div>
+              {/* Terminal Box via Wagmi */}
+              <TradePanel market={market} />
 
               {/* Rewards Box */}
               <div className="bg-card rounded-xl border border-border p-4">

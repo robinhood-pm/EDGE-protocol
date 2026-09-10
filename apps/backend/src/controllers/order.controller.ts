@@ -1,16 +1,43 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
-// import { verifyMessage } from 'ethers'; // Used for verifying EIP-712 signature in production
+import { verifyTypedData } from 'ethers';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { market_id, wallet_address, side, order_type, amount, price, signature } = req.body;
+    const { market_id, wallet_address, side, order_type, amount, price, signature, rawOrder } = req.body;
 
-    // TODO: Verify EIP-712 Signature using ethers.js
-    // const signerAddress = verifyMessage(...);
-    // if (signerAddress.toLowerCase() !== wallet_address.toLowerCase()) {
-    //   return res.status(401).json({ error: "Invalid signature" });
-    // }
+    if (!signature || !rawOrder) {
+      return res.status(400).json({ error: "Missing signature or rawOrder" });
+    }
+
+    const domain = {
+      name: "EdgeProtocolExchange",
+      version: "1",
+      chainId: Number(process.env.ROBINHOOD_CHAIN_ID),
+      verifyingContract: process.env.EXCHANGE_ADDRESS as string
+    };
+
+    const types = {
+      Order: [
+        { name: "maker", type: "address" },
+        { name: "marketId", type: "uint256" },
+        { name: "outcome", type: "uint8" },
+        { name: "amount", type: "uint256" },
+        { name: "price", type: "uint256" },
+        { name: "isBuy", type: "bool" },
+        { name: "nonce", type: "uint256" },
+        { name: "expiration", type: "uint256" },
+      ]
+    };
+
+    // Verify EIP-712 Signature
+    const signerAddress = verifyTypedData(domain, types, rawOrder, signature);
+    
+    if (signerAddress.toLowerCase() !== wallet_address.toLowerCase()) {
+      return res.status(401).json({ error: "Invalid cryptographic signature. Signer mismatch." });
+    }
 
     const { data, error } = await supabase
       .from('orders')
