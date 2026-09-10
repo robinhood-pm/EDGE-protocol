@@ -70,22 +70,22 @@ export function MarketCard({ market }: MarketCardProps) {
             <div className="flex-1 flex flex-col justify-end mb-4">
               <div className="flex justify-between text-sm font-bold mb-2">
                 <span className="text-yes flex items-center gap-1">
-                  Yes {market.yesProbability}%
+                  Yes {Number(market.yesProbability || 0).toFixed(1)}%
                 </span>
                 <span className="text-no flex items-center gap-1">
-                  No {market.noProbability}%
+                  No {Number(market.noProbability || 0).toFixed(1)}%
                 </span>
               </div>
               {/* Probability Bar */}
               <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden flex mb-4 backdrop-blur-sm">
-                <div className="h-full bg-yes" style={{ width: `${market.yesProbability}%` }} />
+                <div className="h-full bg-yes" style={{ width: `${Number(market.yesProbability || 0)}%` }} />
                 <div className="h-full bg-black/40 w-1" />
-                <div className="h-full bg-no" style={{ width: `${market.noProbability}%` }} />
+                <div className="h-full bg-no" style={{ width: `${Number(market.noProbability || 0)}%` }} />
               </div>
               
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="yes" className="w-full text-xs h-9">Yes {market.yesPrice}¢</Button>
-                <Button variant="no" className="w-full text-xs h-9">No {market.noPrice}¢</Button>
+                <Button variant="yes" className="w-full text-xs h-9">Yes {Number(market.yesPrice || 0).toFixed(1)}¢</Button>
+                <Button variant="no" className="w-full text-xs h-9">No {Number(market.noPrice || 0).toFixed(1)}¢</Button>
               </div>
             </div>
           )}
