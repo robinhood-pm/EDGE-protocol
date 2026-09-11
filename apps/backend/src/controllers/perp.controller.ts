@@ -20,8 +20,8 @@ export const getPerpMarkets = async (req: Request, res: Response) => {
             .from('perp_mark_prices')
             .select('market_id, price')
             .order('timestamp', { ascending: false })
-            // We fetch more items overall, but we will group them manually
-            // A better way would be lateral joins, but this works for MVP
+        // We fetch more items overall, but we will group them manually
+        // A better way would be lateral joins, but this works for MVP
 
         let marketsWithHistory = markets;
         if (!pErr && recentPrices) {
@@ -69,7 +69,7 @@ export const getPerpMarketDetail = async (req: Request, res: Response) => {
             .eq('market_id', marketId)
             .order('timestamp', { ascending: false })
             .limit(50);
-            
+
         // Reverse so the oldest is first, newest is last (left to right on chart)
         const priceHistory = priceHistoryData ? priceHistoryData.reverse() : [];
 
@@ -122,7 +122,7 @@ export const getPerpOrderbook = async (req: Request, res: Response) => {
 export const submitPerpOrder = async (req: Request, res: Response) => {
     try {
         const { network = 'testnet', marketId, trader, side, size, price, margin, leverage, signature, nonce, expiration } = req.body;
-        
+
         // 1. Basic Validation
         if (!marketId || !trader || !side || !size || !price || !margin || !leverage || !signature || nonce == null || !expiration) {
             return res.status(400).json({ success: false, error: 'Missing required order fields' });
@@ -166,7 +166,7 @@ export const submitPerpOrder = async (req: Request, res: Response) => {
 export const getPerpPositions = async (req: Request, res: Response) => {
     try {
         const { trader, network = 'testnet' } = req.query;
-        
+
         if (!trader) {
             return res.status(400).json({ success: false, error: 'Trader address required' });
         }
@@ -182,9 +182,9 @@ export const getPerpPositions = async (req: Request, res: Response) => {
 
         // Fetch the latest mark price for each unique market in the positions
         const uniqueMarketIds = [...new Set(positions.map(p => p.market_id))];
-        
+
         let markPricesByMarket: Record<string, number> = {};
-        
+
         if (uniqueMarketIds.length > 0) {
             // We fetch the latest price for these markets
             // A simple approach: query recent prices for these markets
@@ -193,7 +193,7 @@ export const getPerpPositions = async (req: Request, res: Response) => {
                 .select('market_id, price')
                 .in('market_id', uniqueMarketIds)
                 .order('timestamp', { ascending: false });
-                
+
             if (recentPrices) {
                 for (const rp of recentPrices) {
                     if (!markPricesByMarket[rp.market_id]) {
