@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Header } from '@/components/organisms/Header';
 import { usePerpMarket } from '@/hooks/usePerpMarket';
 import { useSignPerpOrder } from '@/lib/web3/signature';
 import { useAccount } from 'wagmi';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 
 export default function PerpTradingTerminal() {
   const { marketId } = useParams();
@@ -66,43 +67,42 @@ export default function PerpTradingTerminal() {
     }
   };
 
+  // Auto-fill price with current mark price on first load
+  useEffect(() => {
+    if (marketStats?.currentMarkPrice && !price) {
+      setPrice(Number(marketStats.currentMarkPrice).toFixed(2));
+    }
+  }, [marketStats?.currentMarkPrice]);
+
   // Determine Chart Color
-  // Calculate if the latest price is higher than the oldest price we have
-  const firstPrice = priceHistory && priceHistory.length > 0 ? priceHistory[0].price : 0;
-  const latestPrice = priceHistory && priceHistory.length > 0 ? priceHistory[priceHistory.length - 1].price : 0;
+  const firstPrice = priceHistory && priceHistory.length > 0 ? Number(priceHistory[0].price) : 0;
+  const latestPrice = priceHistory && priceHistory.length > 0 ? Number(priceHistory[priceHistory.length - 1].price) : 0;
   const isPositive = latestPrice >= firstPrice;
   const themeColor = isPositive ? '#00C805' : '#FF5000';
 
-  // Generate dynamic SVG path
-  const generateChartPath = () => {
-    if (!priceHistory || priceHistory.length < 2) {
-      return "M0 150 L1000 150"; // Flat line if no data
-    }
-    
-    const prices = priceHistory.map(p => Number(p.price));
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    
-    // Add some padding to Y axis so line doesn't touch top/bottom edges
-    const padding = (maxPrice - minPrice) * 0.1 || 1;
-    const yMin = minPrice - padding;
-    const yMax = maxPrice + padding;
-    const yRange = yMax - yMin;
+  // Prepare chart data for recharts
+  const chartData = (priceHistory || []).map((p: any, i: number) => ({
+    time: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    price: Number(p.price),
+    index: i
+  }));
+  const totalPoints = chartData.length;
+  const lastPoint = totalPoints > 0 ? chartData[totalPoints - 1] : null;
 
-    const width = 1000;
-    const height = 300;
-
-    let path = "";
-    for (let i = 0; i < prices.length; i++) {
-      const x = (i / (prices.length - 1)) * width;
-      // In SVG, Y=0 is the top, so we invert it
-      const y = height - (((prices[i] - yMin) / yRange) * height);
-      path += `${i === 0 ? 'M' : ' L'}${x.toFixed(1)} ${y.toFixed(1)}`;
-    }
-    return path;
+  // Custom dot: only render on the LAST data point
+  const renderDot = (props: any) => {
+    const { cx, cy, index } = props;
+    if (index !== totalPoints - 1) return null;
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={5} fill={themeColor} stroke="#000" strokeWidth={2} />
+        <circle cx={cx} cy={cy} r={10} fill={themeColor} opacity={0.3} className="animate-pulse" />
+        <text x={cx + 14} y={cy + 4} fill={themeColor} fontWeight="bold" fontSize={12}>
+          {lastPoint ? `$${Number(lastPoint.price).toFixed(2)}` : ''}
+        </text>
+      </g>
+    );
   };
-
-  const chartPath = generateChartPath();
 
   return (
     <div className="min-h-screen bg-[#000000] text-white flex flex-col">
@@ -126,29 +126,39 @@ export default function PerpTradingTerminal() {
             </div>
           </div>
 
-          {/* Dummy Robinhood SVG Sparkline */}
-          <div className="h-64 md:h-96 w-full flex items-center justify-center relative border border-white/5 rounded-xl overflow-hidden group">
+          {/* Real-time Price Chart */}
+          <div className="h-64 md:h-96 w-full relative border border-white/5 rounded-xl overflow-hidden">
             {/* Background Grid Lines */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjZmZmZmZmMDgiIGZpbGw9Im5vbmUiPjxwb2x5Z29uIHBvaW50cz0iMCAwIDQwIDAgNDAgNDAgMCA0MCIvPjwvZz48L3N2Zz4=')] opacity-20"></div>
             
-            <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="none" className="z-10">
-              {/* Dynamic Price Line */}
-              <path d={chartPath} 
-                    fill="none" stroke={themeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              {/* Gradient Fill under the line */}
-              <path d={`${chartPath} L1000 300 L0 300 Z`} 
-                    fill={`url(#gradient-${themeColor.replace('#', '')})`} opacity="0.2" />
-              <defs>
-                <linearGradient id={`gradient-${themeColor.replace('#', '')}`} x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor={themeColor} stopOpacity="1" />
-                  <stop offset="100%" stopColor={themeColor} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-            
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm z-20">
-               <span className="bg-white/10 px-4 py-2 rounded-full font-mono text-sm border border-white/20">Chart Interactive Mode (WIP)</span>
-            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 70, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="perpGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={themeColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={themeColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="time" hide />
+                <YAxis domain={['dataMin - 10', 'dataMax + 10']} hide />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 12px' }}
+                  labelStyle={{ color: '#888', fontSize: 11 }}
+                  itemStyle={{ color: '#fff', fontFamily: 'monospace' }}
+                  formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Price']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke={themeColor}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#perpGradient)"
+                  dot={renderDot}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Stats Bar */}
