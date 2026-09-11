@@ -30,7 +30,15 @@ const runSimulation = async () => {
             .limit(1)
             .single();
 
-        currentPrices[mId] = lastPrice ? Number(lastPrice.price) : 0.50; // default 0.50 probability
+        const isCrypto = mId.includes('USD') || mId.includes('USDG');
+        const defaultPrice = isCrypto ? (mId.includes('BTC') ? 64000 : 3500) : 0.50;
+        
+        currentPrices[mId] = lastPrice ? Number(lastPrice.price) : defaultPrice; // default depending on market
+        
+        // Fix currently messed up prices for Crypto
+        if (isCrypto && currentPrices[mId] < 10) {
+            currentPrices[mId] = defaultPrice;
+        }
     }
 
     // 3. Loop and update all markets simultaneously
@@ -38,13 +46,24 @@ const runSimulation = async () => {
         const inserts = [];
 
         for (const mId of marketIds) {
-            // Random walk between -VOLATILITY and +VOLATILITY
-            const change = (Math.random() * VOLATILITY * 2) - VOLATILITY;
-            let newPrice = currentPrices[mId] + change;
-
-            // Clamp probability between 0.01 and 0.99
-            if (newPrice > 0.99) newPrice = 0.99;
-            if (newPrice < 0.01) newPrice = 0.01;
+            const isCrypto = mId.includes('USD') || mId.includes('USDG');
+            
+            // Adjust volatility and clamping based on market type
+            let newPrice = currentPrices[mId];
+            if (isCrypto) {
+                // Crypto: higher volatility (e.g. 0.5% per tick)
+                const cryptoVol = currentPrices[mId] * 0.005; 
+                const change = (Math.random() * cryptoVol * 2) - cryptoVol;
+                newPrice += change;
+                // No strict upper bound, lower bound > 0
+                if (newPrice < 1) newPrice = 1;
+            } else {
+                // Probability: max 0.05 shift, clamped 0.01 to 0.99
+                const change = (Math.random() * VOLATILITY * 2) - VOLATILITY;
+                newPrice += change;
+                if (newPrice > 0.99) newPrice = 0.99;
+                if (newPrice < 0.01) newPrice = 0.01;
+            }
 
             currentPrices[mId] = newPrice;
 

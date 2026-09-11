@@ -180,7 +180,35 @@ export const getPerpPositions = async (req: Request, res: Response) => {
 
         if (error) throw error;
 
-        res.json({ success: true, positions });
+        // Fetch the latest mark price for each unique market in the positions
+        const uniqueMarketIds = [...new Set(positions.map(p => p.market_id))];
+        
+        let markPricesByMarket: Record<string, number> = {};
+        
+        if (uniqueMarketIds.length > 0) {
+            // We fetch the latest price for these markets
+            // A simple approach: query recent prices for these markets
+            const { data: recentPrices } = await supabase
+                .from('perp_mark_prices')
+                .select('market_id, price')
+                .in('market_id', uniqueMarketIds)
+                .order('timestamp', { ascending: false });
+                
+            if (recentPrices) {
+                for (const rp of recentPrices) {
+                    if (!markPricesByMarket[rp.market_id]) {
+                        markPricesByMarket[rp.market_id] = rp.price;
+                    }
+                }
+            }
+        }
+
+        const enrichedPositions = positions.map(p => ({
+            ...p,
+            currentMarkPrice: markPricesByMarket[p.market_id] || null
+        }));
+
+        res.json({ success: true, positions: enrichedPositions });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }

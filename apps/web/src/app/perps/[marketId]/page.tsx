@@ -208,7 +208,7 @@ export default function PerpTradingTerminal() {
                     const size = Number(p.size);
                     const lev = Number(p.leverage) || 1;
                     const mmr = Number(marketStats?.maintenance_margin_rate || 0.05);
-                    const markPrice = Number(marketStats?.currentMarkPrice || marketStats?.currentIndexPrice || entry);
+                    const markPrice = Number((p as any).currentMarkPrice || marketStats?.currentMarkPrice || marketStats?.currentIndexPrice || entry);
                     
                     let pnl = 0;
                     let liqPrice = 0;
