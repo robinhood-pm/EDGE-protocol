@@ -24,114 +24,144 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
             .eq('network', network)
             .eq('status', 'OPEN');
 
-        if (error || !orders) throw error;
+        if (error || !orders || orders.length === 0) return;
 
-        // Separate LONG and SHORT orders
-        const longs = orders.filter(o => o.side === 'LONG').sort((a, b) => Number(b.price) - Number(a.price)); // Highest price first
-        const shorts = orders.filter(o => o.side === 'SHORT').sort((a, b) => Number(a.price) - Number(b.price)); // Lowest price first
+        console.log(`[Perp Matching Engine] Found ${orders.length} OPEN orders to process.`);
 
-        for (const long of longs) {
-            for (const short of shorts) {
-                if (long.status === 'OPEN' && short.status === 'OPEN') {
-                    // Check if prices cross (Long is willing to pay >= Short's asking price)
-                    if (Number(long.price) >= Number(short.price)) {
-                        console.log(`[Perp Matching Engine] Found match! Long: ${long.id} (${long.price}) Short: ${short.id} (${short.price})`);
-                        
-                        // Validate Margin constraints off-chain before submitting tx
-                        const longValid = await validateOrderMargin(perpMarketId, network, long.trader, Number(long.size), Number(long.price), Number(long.margin), Number(long.leverage));
-                        const shortValid = await validateOrderMargin(perpMarketId, network, short.trader, Number(short.size), Number(short.price), Number(short.margin), Number(short.leverage));
+        const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL!);
+        const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY!, provider);
+        const exchange = new ethers.Contract(process.env.PERP_EXCHANGE_ADDRESS!, PERP_EXCHANGE_ABI, relayer);
 
-                        if (!longValid.valid) {
-                            console.log(`[Perp Matching Engine] Long order invalid: ${longValid.reason}`);
-                            await supabase.from('perp_orders').update({ status: 'CANCELED' }).eq('id', long.id);
-                            long.status = 'CANCELED';
-                            continue;
-                        }
+        const DOMAIN = {
+            name: 'EdgeProtocolPerpExchange',
+            version: '1',
+            chainId: Number(process.env.ROBINHOOD_CHAIN_ID!),
+            verifyingContract: process.env.PERP_EXCHANGE_ADDRESS!
+        };
 
-                        if (!shortValid.valid) {
-                            console.log(`[Perp Matching Engine] Short order invalid: ${shortValid.reason}`);
-                            await supabase.from('perp_orders').update({ status: 'CANCELED' }).eq('id', short.id);
-                            short.status = 'CANCELED';
-                            continue;
-                        }
+        const TYPES = {
+            PerpOrder: [
+                { name: 'maker', type: 'address' },
+                { name: 'marketId', type: 'uint256' },
+                { name: 'isLong', type: 'bool' },
+                { name: 'size', type: 'uint256' },
+                { name: 'price', type: 'uint256' },
+                { name: 'margin', type: 'uint256' },
+                { name: 'leverage', type: 'uint256' },
+                { name: 'nonce', type: 'uint256' },
+                { name: 'expiration', type: 'uint256' }
+            ]
+        };
 
-                        try {
-                            const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
-                            const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001', provider);
-                            const exchange = new ethers.Contract(process.env.PERP_EXCHANGE_ADDRESS || '0x', PERP_EXCHANGE_ABI, relayer);
+        for (const order of orders) {
+            console.log(`[Perp Matching Engine] Attempting on-chain AMM fill for order ${order.id}`);
 
-                            // Construct order tuples
-                            const longOrderTuple = {
-                                maker: long.trader,
-                                marketId: perpMarketId,
-                                isLong: true,
-                                size: ethers.parseUnits(long.size.toString(), 18),
-                                price: ethers.parseUnits(long.price.toString(), 18),
-                                margin: ethers.parseUnits(long.margin.toString(), 18),
-                                leverage: ethers.parseUnits(long.leverage.toString(), 18),
-                                nonce: long.nonce,
-                                expiration: Math.floor(new Date(long.expiration).getTime() / 1000)
-                            };
+            try {
+                // Determine numerical market ID (stripping non-digits like frontend)
+                const numericalMarketId = BigInt(perpMarketId.replace(/\\D/g, '') || '0');
 
-                            const shortOrderTuple = {
-                                maker: short.trader,
-                                marketId: perpMarketId,
-                                isLong: false,
-                                size: ethers.parseUnits(short.size.toString(), 18),
-                                price: ethers.parseUnits(short.price.toString(), 18),
-                                margin: ethers.parseUnits(short.margin.toString(), 18),
-                                leverage: ethers.parseUnits(short.leverage.toString(), 18),
-                                nonce: short.nonce,
-                                expiration: Math.floor(new Date(short.expiration).getTime() / 1000)
-                            };
+                // 1. Construct the user's tuple exactly as signed
+                const userOrderTuple = {
+                    maker: order.trader,
+                    marketId: numericalMarketId,
+                    isLong: order.side === 'LONG',
+                    size: ethers.parseUnits(order.size.toString(), 18),
+                    price: ethers.parseUnits(order.price.toString(), 18),
+                    margin: ethers.parseUnits(order.margin.toString(), 18),
+                    leverage: ethers.parseUnits(order.leverage.toString(), 18),
+                    nonce: BigInt(order.nonce),
+                    expiration: BigInt(new Date(order.expiration).getTime())
+                };
 
-                            if (process.env.RELAYER_PRIVATE_KEY && process.env.PERP_EXCHANGE_ADDRESS) {
-                                console.log(`[Perp Matching Engine] Relaying match to contract ${process.env.PERP_EXCHANGE_ADDRESS}...`);
-                                const tx = await exchange.matchPerpOrders(
-                                    longOrderTuple,
-                                    long.signature,
-                                    shortOrderTuple,
-                                    short.signature
-                                );
-                                const receipt = await tx.wait();
-                                console.log(`[Perp Matching Engine] On-chain match successful: ${receipt.hash}`);
+                // 2. Construct the AMM counter-order tuple
+                const ammNonce = BigInt(Date.now());
+                const ammOrderTuple = {
+                    maker: relayer.address,
+                    marketId: numericalMarketId,
+                    isLong: order.side === 'SHORT', // Opposite side
+                    size: userOrderTuple.size,
+                    price: userOrderTuple.price,
+                    margin: userOrderTuple.margin,
+                    leverage: userOrderTuple.leverage,
+                    nonce: ammNonce,
+                    expiration: BigInt(Date.now() + 86400000)
+                };
 
-                                const tradePrice = Number(long.price); 
-                                const tradeAmount = Math.min(Number(long.size), Number(short.size));
+                // 3. AMM signs the counter-order off-chain
+                const ammSignature = await relayer.signTypedData(DOMAIN, TYPES, ammOrderTuple);
 
-                                // Mark orders as filled
-                                // For simplicity we assume full fill here, partial fill requires updating filled_amount
-                                await supabase.from('perp_orders').update({ status: 'FILLED', filled_amount: tradeAmount }).eq('id', long.id);
-                                await supabase.from('perp_orders').update({ status: 'FILLED', filled_amount: tradeAmount }).eq('id', short.id);
+                // 4. Relay to Smart Contract
+                const longOrder = order.side === 'LONG' ? userOrderTuple : ammOrderTuple;
+                const longSignature = order.side === 'LONG' ? order.signature : ammSignature;
+                const shortOrder = order.side === 'SHORT' ? userOrderTuple : ammOrderTuple;
+                const shortSignature = order.side === 'SHORT' ? order.signature : ammSignature;
 
-                                // Insert fill
-                                await supabase.from('perp_fills').insert({
-                                    network,
-                                    match_id: receipt.hash,
-                                    maker_order_id: long.id,
-                                    taker_order_id: short.id,
-                                    market_id: perpMarketId,
-                                    size: tradeAmount,
-                                    price: tradePrice
-                                });
+                console.log(`[Perp Matching Engine] Submitting to chain: ${process.env.PERP_EXCHANGE_ADDRESS}...`);
+                const tx = await exchange.matchPerpOrders(longOrder, longSignature, shortOrder, shortSignature);
+                const receipt = await tx.wait();
+                const realTxHash = receipt.hash;
+                console.log(`[Perp Matching Engine] On-chain match successful! Tx: ${realTxHash}`);
 
-                                // Note: perp_positions table would theoretically be updated by the on-chain indexer,
-                                // but if we want instant UI updates, we can optimistically insert/update it here as well.
-                                // For production architecture, relying on the Indexer (listening to PositionOpened/Increased events) is safer.
+                // 5. Update Database
+                await supabase.from('perp_orders').update({ 
+                    status: 'FILLED', 
+                    filled_amount: order.size 
+                }).eq('id', order.id);
 
-                            } else {
-                                console.warn(`[Perp Matching Engine] Cannot settle trade on-chain: Missing RELAYER_PRIVATE_KEY or PERP_EXCHANGE_ADDRESS`);
-                            }
+                await supabase.from('perp_fills').insert({
+                    id: crypto.randomUUID(),
+                    network,
+                    match_id: realTxHash, // <== REAL TESTNET TX HASH
+                    maker_order_id: order.id,
+                    taker_order_id: `amm-counter-${ammNonce}`,
+                    market_id: perpMarketId,
+                    size: order.size,
+                    price: order.price
+                });
 
-                            long.status = 'FILLED';
-                            short.status = 'FILLED';
-                        } catch (e) {
-                            console.error(`[Perp Matching Engine] On-chain settlement failed:`, e);
-                            // If it fails on-chain, we don't mark as FILLED because it didn't execute.
-                            // Depending on the error, we might want to CANCELED it or keep it OPEN.
-                        }
+                // 6. Upsert User Position
+                const { data: existingPositions } = await supabase
+                    .from('perp_positions')
+                    .select('*')
+                    .eq('trader', order.trader)
+                    .eq('market_id', perpMarketId)
+                    .eq('network', network)
+                    .eq('status', 'OPEN');
+
+                if (existingPositions && existingPositions.length > 0) {
+                    const pos = existingPositions[0];
+                    let newSize = Number(pos.size);
+                    let newMargin = Number(pos.margin);
+                    
+                    if (pos.side === order.side) {
+                        newSize += Number(order.size);
+                        newMargin += Number(order.margin);
+                    } else {
+                        newSize -= Number(order.size);
                     }
+
+                    await supabase.from('perp_positions').update({
+                        size: newSize,
+                        margin: newMargin,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', pos.id);
+                } else {
+                    await supabase.from('perp_positions').insert({
+                        id: `${order.trader}-${perpMarketId}-${Date.now()}`,
+                        network,
+                        trader: order.trader,
+                        market_id: perpMarketId,
+                        side: order.side,
+                        size: order.size,
+                        entry_price: order.price,
+                        margin: order.margin,
+                        leverage: order.leverage,
+                        status: 'OPEN'
+                    });
                 }
+            } catch (e: any) {
+                console.error(`[Perp Matching Engine] On-chain settlement failed for ${order.id}:`, e.message);
+                await supabase.from('perp_orders').update({ status: 'CANCELED' }).eq('id', order.id);
             }
         }
     } catch (e) {

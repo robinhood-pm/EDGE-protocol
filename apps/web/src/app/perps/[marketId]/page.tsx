@@ -11,7 +11,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceD
 export default function PerpTradingTerminal() {
   const { marketId } = useParams();
   const { address } = useAccount();
-  const { marketStats, priceHistory, orderbook, positions } = usePerpMarket(marketId as string);
+  const { marketStats, priceHistory, orderbook, positions, fetchPositions } = usePerpMarket(marketId as string);
   const { signOrder } = useSignPerpOrder();
 
   const [side, setSide] = useState<'LONG' | 'SHORT'>('LONG');
@@ -21,6 +21,12 @@ export default function PerpTradingTerminal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modal, setModal] = useState<{ show: boolean; success: boolean; message: string; orderId?: string }>({ show: false, success: false, message: '' });
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (address) {
+      fetchPositions(address);
+    }
+  }, [address, fetchPositions]);
 
   const handleSubmitOrder = async () => {
     if (!address || !size || !price) return;

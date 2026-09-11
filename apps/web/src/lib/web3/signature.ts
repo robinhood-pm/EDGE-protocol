@@ -2,7 +2,7 @@ import { parseUnits } from 'viem';
 import { useSignTypedData } from 'wagmi';
 
 const DOMAIN = {
-  name: 'EdgeProtocolPerps',
+  name: 'EdgeProtocolPerpExchange',
   version: '1',
   chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID),
   verifyingContract: process.env.NEXT_PUBLIC_PERP_EXCHANGE_ADDRESS as `0x${string}`

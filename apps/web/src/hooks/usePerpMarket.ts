@@ -74,6 +74,26 @@ export function usePerpMarket(marketId: string) {
                     });
                 }
             )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'perp_positions', filter: `market_id=eq.${marketId}` },
+                (payload) => {
+                    // When a position is created or updated, we just update the state
+                    // If it's an INSERT, add it to the positions array.
+                    // If it's an UPDATE, replace the existing one.
+                    setPositions((prev) => {
+                        const pos = payload.new as any;
+                        const existingIdx = prev.findIndex((p) => p.id === pos.id);
+                        if (existingIdx >= 0) {
+                            const newPositions = [...prev];
+                            newPositions[existingIdx] = pos;
+                            return newPositions;
+                        } else {
+                            return [pos, ...prev];
+                        }
+                    });
+                }
+            )
             .subscribe();
 
         return () => {
