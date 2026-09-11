@@ -209,11 +209,15 @@ export default function PerpTradingTerminal() {
                     const lev = Number(p.leverage) || 1;
                     const mmr = Number(marketStats?.maintenance_margin_rate || 0.05);
                     const isCurrentMarket = p.market_id === marketId;
-                    const markPrice = Number(
-                      (p as any).currentMarkPrice || 
-                      (isCurrentMarket ? marketStats?.currentMarkPrice || marketStats?.currentIndexPrice : null) || 
-                      entry
-                    );
+                    // Use the per-position mark price from backend first.
+                    // Only fall back to marketStats if this position belongs to the currently viewed market.
+                    // If neither is available, use entry price so PnL shows as 0 (not contaminated by another market).
+                    let markPrice = entry; // safe default = entry price => PnL = 0
+                    if ((p as any).currentMarkPrice != null && (p as any).currentMarkPrice !== '') {
+                      markPrice = Number((p as any).currentMarkPrice);
+                    } else if (isCurrentMarket && marketStats?.currentMarkPrice) {
+                      markPrice = Number(marketStats.currentMarkPrice);
+                    }
                     
                     let pnl = 0;
                     let liqPrice = 0;
