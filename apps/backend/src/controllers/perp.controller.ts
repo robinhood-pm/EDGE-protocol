@@ -16,21 +16,20 @@ export const getPerpMarkets = async (req: Request, res: Response) => {
         if (error) throw error;
 
         // Fetch recent price history for all markets for sparklines
-        const { data: recentPrices, error: pErr } = await supabase
-            .from('perp_mark_prices')
-            .select('market_id, price')
-            .order('timestamp', { ascending: false })
-        // We fetch more items overall, but we will group them manually
         // A better way would be lateral joins, but this works for MVP
-
-        let marketsWithHistory = markets;
-        if (!pErr && recentPrices) {
-            marketsWithHistory = markets.map(market => {
-                const history = recentPrices
-                    .filter(p => p.market_id === market.id)
-                    .slice(0, 20)
-                    .reverse();
-                return { ...market, priceHistory: history };
+        let marketsWithHistory = [];
+        
+        for (const market of markets) {
+            const { data: recentPrices } = await supabase
+                .from('perp_mark_prices')
+                .select('price')
+                .eq('market_id', market.id)
+                .order('timestamp', { ascending: false })
+                .limit(20);
+                
+            marketsWithHistory.push({
+                ...market,
+                priceHistory: recentPrices ? recentPrices.reverse() : []
             });
         }
 
@@ -203,9 +202,22 @@ export const getPerpPositions = async (req: Request, res: Response) => {
             }
         }
 
+        const { data: marketsData } = await supabase
+            .from('perp_markets')
+            .select('id, name')
+            .in('id', uniqueMarketIds);
+
+        const marketNames: Record<string, string> = {};
+        if (marketsData) {
+            for (const m of marketsData) {
+                marketNames[m.id] = m.name;
+            }
+        }
+
         const enrichedPositions = positions.map(p => ({
             ...p,
-            currentMarkPrice: markPricesByMarket[p.market_id] || null
+            currentMarkPrice: markPricesByMarket[p.market_id] || null,
+            marketName: marketNames[p.market_id] || p.market_id
         }));
 
         res.json({ success: true, positions: enrichedPositions });

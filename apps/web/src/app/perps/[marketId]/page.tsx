@@ -208,7 +208,12 @@ export default function PerpTradingTerminal() {
                     const size = Number(p.size);
                     const lev = Number(p.leverage) || 1;
                     const mmr = Number(marketStats?.maintenance_margin_rate || 0.05);
-                    const markPrice = Number((p as any).currentMarkPrice || marketStats?.currentMarkPrice || marketStats?.currentIndexPrice || entry);
+                    const isCurrentMarket = p.market_id === marketId;
+                    const markPrice = Number(
+                      (p as any).currentMarkPrice || 
+                      (isCurrentMarket ? marketStats?.currentMarkPrice || marketStats?.currentIndexPrice : null) || 
+                      entry
+                    );
                     
                     let pnl = 0;
                     let liqPrice = 0;
@@ -224,7 +229,7 @@ export default function PerpTradingTerminal() {
                     return (
                       <tr key={p.id}>
                         <td className="py-3 font-semibold text-white/90">
-                          {p.market_id.replace('PERP-', '').replace(/-/g, ' ')}
+                          {(p as any).marketName || p.market_id.replace('PERP-', '').replace(/-/g, ' ')}
                         </td>
                         <td className={`py-3 font-medium ${p.side === 'LONG' ? 'text-[#00C805]' : 'text-[#FF5000]'}`}>{p.side}</td>
                         <td className="py-3 font-mono">{p.size}</td>

@@ -20,7 +20,7 @@ const DOMAIN = {
 const TYPES = {
     PerpOrder: [
         { name: 'maker', type: 'address' },
-        { name: 'marketId', type: 'uint256' },
+        { name: 'perpMarketId', type: 'uint256' },
         { name: 'isLong', type: 'bool' },
         { name: 'size', type: 'uint256' },
         { name: 'price', type: 'uint256' },
@@ -111,13 +111,14 @@ async function executeRandomTrade() {
     const nonce = Date.now();
     const expiration = nonce + 86400000; // expires in 24 hours
     
-    // Determine numerical market ID (stripping non-digits like frontend)
-    const numericalMarketId = BigInt(marketId.replace(/\D/g, '') || '0');
+    // Determine numerical market ID (hash the string to get a uint256 compatible number)
+    console.log(`🤖 Converting marketId ${marketId} to BigInt...`);
+    const numericalMarketId = BigInt(ethers.id(marketId));
 
     // 4. Construct Tuple & Sign
     const orderTuple = {
         maker: wallet.address,
-        marketId: numericalMarketId,
+        perpMarketId: numericalMarketId,
         isLong: isLong,
         size: ethers.parseUnits(size, 18),
         price: ethers.parseUnits(orderPrice, 18),
@@ -128,11 +129,22 @@ async function executeRandomTrade() {
     };
 
     const signature = await wallet.signTypedData(DOMAIN, TYPES, orderTuple);
+    console.log(`🤖 BOT TUPLE:`, JSON.stringify({
+        ...orderTuple,
+        size: orderTuple.size.toString(),
+        price: orderTuple.price.toString(),
+        margin: orderTuple.margin.toString(),
+        leverage: orderTuple.leverage.toString(),
+        perpMarketId: orderTuple.perpMarketId.toString(),
+        nonce: orderTuple.nonce.toString(),
+        expiration: orderTuple.expiration.toString()
+    }, null, 2));
 
     // 5. Insert to Database
     const orderId = `${wallet.address}-${marketId}-${nonce}`;
     const expirationDate = new Date(expiration).toISOString();
 
+    console.log(`🤖 Inserting order ${orderId} into database...`);
     const { error } = await supabase.from('perp_orders').insert({
         id: orderId,
         network: 'testnet',

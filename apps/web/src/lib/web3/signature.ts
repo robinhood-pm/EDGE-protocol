@@ -1,4 +1,4 @@
-import { parseUnits } from 'viem';
+import { parseUnits, keccak256, toHex } from 'viem';
 import { useSignTypedData } from 'wagmi';
 
 const DOMAIN = {
@@ -11,7 +11,7 @@ const DOMAIN = {
 const TYPES = {
   PerpOrder: [
     { name: 'maker', type: 'address' },
-    { name: 'marketId', type: 'uint256' },
+    { name: 'perpMarketId', type: 'uint256' },
     { name: 'isLong', type: 'bool' },
     { name: 'size', type: 'uint256' },
     { name: 'price', type: 'uint256' },
@@ -44,9 +44,8 @@ export function useSignPerpOrder() {
     // the signature must match exactly what the contract expects (WEI).
     const message = {
       maker: orderData.maker as `0x${string}`,
-      // Hash the string marketId if it's alphanumeric, or parse if it's numeric. 
-      // Assuming marketId is a BigInt or hex string for the contract:
-      marketId: BigInt(orderData.marketId.replace(/\D/g, '') || '0'), 
+      // Hash the string marketId to get a uint256 compatible number
+      perpMarketId: BigInt(keccak256(toHex(orderData.marketId))), 
       isLong: orderData.isLong,
       size: parseUnits(orderData.size, 18),
       price: parseUnits(orderData.price, 18),
