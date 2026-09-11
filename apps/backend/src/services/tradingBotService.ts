@@ -1,14 +1,8 @@
 import { ethers } from 'ethers';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../utils/supabase';
 import dotenv from 'dotenv';
-import path from 'path';
 
-// Load backend env
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+dotenv.config();
 
 const DOMAIN = {
     name: 'EdgeProtocolPerpExchange',
@@ -31,25 +25,7 @@ const TYPES = {
     ]
 };
 
-// Load bot wallets from contracts/.env
-const BOT_WALLETS = [
-    new ethers.Wallet(process.env.PRIVKEY_BOT_A!),
-    new ethers.Wallet(process.env.PRIVKEY_BOT_B!),
-    new ethers.Wallet(process.env.PRIVKEY_BOT_C!),
-    new ethers.Wallet(process.env.PRIVKEY_BOT_D!),
-    new ethers.Wallet(process.env.PRIVKEY_BOT_E!)
-];
-
 const TICK_INTERVAL_MS = 2500;
-const WEATHER_KEYWORDS = ['RAIN', 'TEMP', 'SNOW', 'FIRE', 'HEAT', 'FLOOD', 'TYP3', 'WEATHER'];
-
-function isWeatherMarket(marketId: string): boolean {
-    return WEATHER_KEYWORDS.some(k => marketId.includes(k));
-}
-
-function getTimestamp() {
-    return new Date().toISOString().split('T')[1].slice(0, 8);
-}
 
 function getRandomInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -60,41 +36,51 @@ function getRandomFloat(min: number, max: number, decimals: number = 4) {
     return parseFloat(val.toFixed(decimals));
 }
 
-async function runBot() {
-    console.log(`\n======================================================`);
-    console.log(`🤖 [${getTimestamp()}] STARTING BRUTAL WEATHER-FOCUSED TRADING BOT`);
-    console.log(`🤖 Priority Ratio: 5 WEATHER MARKETS : 1 CRYPTO MARKET`);
-    console.log(`🤖 Active Wallets: ${BOT_WALLETS.length} | Interval: ${TICK_INTERVAL_MS}ms`);
-    console.log(`======================================================\n`);
+let botWallets: ethers.Wallet[] = [];
 
-    let cycleCount = 0;
+function initWallets() {
+    const keys = [
+        process.env.PRIVKEY_BOT_A,
+        process.env.PRIVKEY_BOT_B,
+        process.env.PRIVKEY_BOT_C,
+        process.env.PRIVKEY_BOT_D,
+        process.env.PRIVKEY_BOT_E
+    ].filter(Boolean);
+
+    botWallets = keys.map(k => new ethers.Wallet(k!));
+}
+
+const WEATHER_KEYWORDS = ['RAIN', 'TEMP', 'SNOW', 'FIRE', 'HEAT', 'FLOOD', 'TYP3', 'WEATHER'];
+
+function isWeatherMarket(marketId: string): boolean {
+    return WEATHER_KEYWORDS.some(k => marketId.includes(k));
+}
+
+export function startTradingBotService() {
+    initWallets();
+    if (botWallets.length === 0) {
+        console.warn('⚠️ [Trading Bot Service] No BOT private keys found in ENV. Bot disabled.');
+        return;
+    }
+
+    console.log(`🤖 [Trading Bot Service] Started with ${botWallets.length} bot wallets (Priority 5:1 Weather vs Crypto).`);
 
     const loop = async () => {
-        cycleCount++;
-        const cycleTime = getTimestamp();
-        console.log(`\n------------------------------------------------------`);
-        console.log(`🔄 [CYCLE #${cycleCount} @ ${cycleTime}] Starting trading tick (5 Weather : 1 Crypto)...`);
-
         try {
-            // STEP 1: FETCH ACTIVE MARKETS
-            console.log(`   └─ [STEP 1/5: FETCH_MARKETS] Querying active perp markets...`);
             const { data: activeMarkets, error } = await supabase
                 .from('perp_markets')
                 .select('id')
                 .in('status', ['ACTIVE', 'REDUCE_ONLY']);
 
-            if (error || !activeMarkets || activeMarkets.length === 0) {
-                console.error(`   ❌ [STEP 1/5 ERROR] Failed to fetch markets:`, error?.message || 'No active markets');
-                return;
-            }
+            if (error || !activeMarkets || activeMarkets.length === 0) return;
 
             const markets: string[] = activeMarkets.map((m: any) => m.id);
 
-            // Separate Weather vs Crypto Markets
+            // Separate into Weather vs Crypto
             const weatherMarkets = markets.filter(m => isWeatherMarket(m));
             const cryptoMarkets = markets.filter(m => !isWeatherMarket(m));
 
-            // Select 5 Weather Markets & 1 Crypto Market per cycle
+            // Apply 5:1 Ratio Priority (Pick 5 Weather Markets & 1 Crypto Market per tick)
             const countWeather = Math.min(weatherMarkets.length, 5);
             const countCrypto = Math.min(cryptoMarkets.length, 1);
 
@@ -106,14 +92,11 @@ async function runBot() {
                 ...shuffledCrypto.slice(0, countCrypto)
             ];
 
-            console.log(`   └─ [TARGETS 5:1 RATIO] Weather (${selectedMarkets.filter(m => isWeatherMarket(m)).length}): ${selectedMarkets.filter(m => isWeatherMarket(m)).join(', ')}`);
-            console.log(`   └─ [TARGETS 5:1 RATIO] Crypto (${selectedMarkets.filter(m => !isWeatherMarket(m)).length}): ${selectedMarkets.filter(m => !isWeatherMarket(m)).join(', ')}`);
-
             for (const marketId of selectedMarkets) {
                 await placeOrderBookPair(marketId);
             }
         } catch (e: any) {
-            console.error(`❌ [CYCLE #${cycleCount} ERROR] Unhandled Exception:`, e.message || e);
+            console.error(`🤖 [Trading Bot Service] Error:`, e.message || e);
         } finally {
             setTimeout(loop, TICK_INTERVAL_MS);
         }
@@ -122,15 +105,9 @@ async function runBot() {
     loop();
 }
 
-/**
- * Places a pair of orders (1 LONG bid + 1 SHORT ask) around current mark/index price for a market.
- */
 async function placeOrderBookPair(marketId: string) {
     const isCrypto = !isWeatherMarket(marketId) && (marketId.startsWith('PERP-BTC-') || marketId.startsWith('PERP-ETH-'));
 
-    // STEP 2: PREPARE ORDER DATA & PRICE CALCULATION
-    console.log(`\n📊 [${marketId}] -> STEP 2/5: PREPARE_ORDER (${isWeatherMarket(marketId) ? '🌤️ Weather Market' : '💰 Crypto Market'})`);
-    
     const { data: markData } = await supabase
         .from('perp_mark_prices')
         .select('price')
@@ -142,13 +119,11 @@ async function placeOrderBookPair(marketId: string) {
     if (markData && markData.length > 0 && Number(markData[0].price) > 0) {
         basePrice = Number(markData[0].price);
     }
-    console.log(`   ├─ Reference Mark Price: $${basePrice}`);
 
-    // Select wallets
-    const walletIndexA = getRandomInt(0, BOT_WALLETS.length - 1);
-    const walletIndexB = (walletIndexA + 1) % BOT_WALLETS.length;
-    const walletLong = BOT_WALLETS[walletIndexA];
-    const walletShort = BOT_WALLETS[walletIndexB];
+    const walletIndexA = getRandomInt(0, botWallets.length - 1);
+    const walletIndexB = (walletIndexA + 1) % botWallets.length;
+    const walletLong = botWallets[walletIndexA];
+    const walletShort = botWallets[walletIndexB];
 
     let longPrice: number;
     let shortPrice: number;
@@ -170,12 +145,7 @@ async function placeOrderBookPair(marketId: string) {
 
     const leverage = getRandomInt(2, 10).toString();
 
-    console.log(`   ├─ LONG Target : $${longPrice} | Size: ${sizeStr} | Lev: ${leverage}x | Wallet: ${walletLong.address.slice(0, 8)}...`);
-    console.log(`   └─ SHORT Target: $${shortPrice} | Size: ${sizeStr} | Lev: ${leverage}x | Wallet: ${walletShort.address.slice(0, 8)}...`);
-
-    // Submit LONG
     await submitBotOrder(walletLong, marketId, true, sizeStr, longPrice.toString(), leverage);
-    // Submit SHORT
     await submitBotOrder(walletShort, marketId, false, sizeStr, shortPrice.toString(), leverage);
 }
 
@@ -187,7 +157,6 @@ async function submitBotOrder(
     orderPrice: string,
     leverage: string
 ) {
-    const sideText = isLong ? '🟢 LONG' : '🔴 SHORT';
     try {
         const margin = (Number(size) * Number(orderPrice) / Number(leverage)).toFixed(6);
         const nonce = Date.now() + Math.floor(Math.random() * 1000);
@@ -207,10 +176,9 @@ async function submitBotOrder(
         };
 
         const signature = await wallet.signTypedData(DOMAIN, TYPES, orderTuple);
-        const orderId = `${wallet.address.slice(0, 6)}-${marketId.slice(0, 10)}-${nonce}`;
         const expirationDate = new Date(expiration).toISOString();
 
-        const { error } = await supabase.from('perp_orders').insert({
+        await supabase.from('perp_orders').insert({
             id: `${wallet.address}-${marketId}-${nonce}`,
             network: 'testnet',
             market_id: marketId,
@@ -225,15 +193,7 @@ async function submitBotOrder(
             expiration: expirationDate,
             status: 'OPEN'
         });
-
-        if (error) {
-            console.error(`   ❌ [STEP 4 ERROR] DB Insert Failed for ${sideText} ${marketId}:`, error.message);
-        } else {
-            console.log(`   ✅ [STEP 5/5 SUCCESS] ${sideText} Placed! ID: ${orderId} | Price: $${orderPrice}`);
-        }
     } catch (e: any) {
-        console.error(`   ❌ [SUBMIT ERROR] ${sideText} Failed for ${marketId}:`, e.message || e);
+        // Silent handling
     }
 }
-
-runBot().catch(console.error);

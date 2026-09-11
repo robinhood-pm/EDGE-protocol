@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT as string;
+const PORT = process.env.PORT || '3001';
 
 app.use(cors());
 app.use(express.json());
@@ -39,18 +39,27 @@ import { startMarkPriceEngine } from './services/markPriceEngine';
 import { startFundingEngine } from './services/fundingEngine';
 import { startLiquidationMonitor } from './services/liquidationMonitor';
 import { startPerpSettlementMonitor } from './services/perpSettlement';
+import { startTradingBotService } from './services/tradingBotService';
+import { startMatchingEngineRunner } from './services/matchingEngineRunner';
+import { startRealOracleFeedService } from './services/realOracleService';
 
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Backend is running on http://localhost:${PORT}`);
   
-  // Start Indexer
+  // Start Core Indexer & Financial Engines
   startIndexer();
-
-  // Start Perp Engines
   startProbabilityIndexEngine();
   startMarkPriceEngine();
   startFundingEngine();
   startLiquidationMonitor();
   startPerpSettlementMonitor();
+
+  // Start Real Oracle Live Data Feed & Testnet Engine
+  if (process.env.ENABLE_AUTO_BOTS !== 'false') {
+    console.log(`📡 Starting Real Testnet Live Oracle Data Feed & Matching Workers...`);
+    startRealOracleFeedService();
+    startMatchingEngineRunner();
+    startTradingBotService();
+  }
 });
