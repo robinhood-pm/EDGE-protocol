@@ -10,6 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export function usePerpMarket(marketId: string) {
     const [marketStats, setMarketStats] = useState<any>(null);
+    const [priceHistory, setPriceHistory] = useState<{price: number, timestamp: string}[]>([]);
     const [orderbook, setOrderbook] = useState<{ bids: any[], asks: any[] }>({ bids: [], asks: [] });
     const [positions, setPositions] = useState<any[]>([]);
 
@@ -24,7 +25,12 @@ export function usePerpMarket(marketId: string) {
                 // Fetch market stats
                 const statRes = await fetch(`${apiUrl}/api/perps/${marketId}?network=${network}`);
                 const statData = await statRes.json();
-                if (statData.success) setMarketStats(statData.market);
+                if (statData.success) {
+                    setMarketStats(statData.market);
+                    if (statData.market.priceHistory) {
+                        setPriceHistory(statData.market.priceHistory);
+                    }
+                }
 
                 // Fetch initial orderbook
                 const obRes = await fetch(`${apiUrl}/api/perps/${marketId}/orderbook?network=${network}`);
@@ -60,6 +66,12 @@ export function usePerpMarket(marketId: string) {
                 { event: 'INSERT', schema: 'public', table: 'perp_mark_prices', filter: `market_id=eq.${marketId}` },
                 (payload) => {
                     setMarketStats((prev: any) => ({ ...prev, currentMarkPrice: payload.new.price }));
+                    setPriceHistory((prev: any) => {
+                        const newHistory = [...prev, { price: payload.new.price, timestamp: payload.new.timestamp }];
+                        // Keep only the last 50 entries
+                        if (newHistory.length > 50) return newHistory.slice(newHistory.length - 50);
+                        return newHistory;
+                    });
                 }
             )
             .subscribe();
@@ -84,6 +96,7 @@ export function usePerpMarket(marketId: string) {
 
     return {
         marketStats,
+        priceHistory,
         orderbook,
         positions,
         fetchPositions

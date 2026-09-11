@@ -10,7 +10,7 @@ import { useAccount } from 'wagmi';
 export default function PerpTradingTerminal() {
   const { marketId } = useParams();
   const { address } = useAccount();
-  const { marketStats, orderbook, positions } = usePerpMarket(marketId as string);
+  const { marketStats, priceHistory, orderbook, positions } = usePerpMarket(marketId as string);
   const { signOrder } = useSignPerpOrder();
 
   const [side, setSide] = useState<'LONG' | 'SHORT'>('LONG');
@@ -48,7 +48,7 @@ export default function PerpTradingTerminal() {
       const res = await fetch(`${apiUrl}/api/perps/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...orderData, signature, side, network })
+        body: JSON.stringify({ ...orderData, trader: address, signature, side, network })
       });
 
       const data = await res.json();
@@ -66,8 +66,43 @@ export default function PerpTradingTerminal() {
     }
   };
 
-  const isPositive = marketStats?.currentFundingRate >= 0;
+  // Determine Chart Color
+  // Calculate if the latest price is higher than the oldest price we have
+  const firstPrice = priceHistory && priceHistory.length > 0 ? priceHistory[0].price : 0;
+  const latestPrice = priceHistory && priceHistory.length > 0 ? priceHistory[priceHistory.length - 1].price : 0;
+  const isPositive = latestPrice >= firstPrice;
   const themeColor = isPositive ? '#00C805' : '#FF5000';
+
+  // Generate dynamic SVG path
+  const generateChartPath = () => {
+    if (!priceHistory || priceHistory.length < 2) {
+      return "M0 150 L1000 150"; // Flat line if no data
+    }
+    
+    const prices = priceHistory.map(p => Number(p.price));
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    // Add some padding to Y axis so line doesn't touch top/bottom edges
+    const padding = (maxPrice - minPrice) * 0.1 || 1;
+    const yMin = minPrice - padding;
+    const yMax = maxPrice + padding;
+    const yRange = yMax - yMin;
+
+    const width = 1000;
+    const height = 300;
+
+    let path = "";
+    for (let i = 0; i < prices.length; i++) {
+      const x = (i / (prices.length - 1)) * width;
+      // In SVG, Y=0 is the top, so we invert it
+      const y = height - (((prices[i] - yMin) / yRange) * height);
+      path += `${i === 0 ? 'M' : ' L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    return path;
+  };
+
+  const chartPath = generateChartPath();
 
   return (
     <div className="min-h-screen bg-[#000000] text-white flex flex-col">
@@ -97,10 +132,11 @@ export default function PerpTradingTerminal() {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjZmZmZmZmMDgiIGZpbGw9Im5vbmUiPjxwb2x5Z29uIHBvaW50cz0iMCAwIDQwIDAgNDAgNDAgMCA0MCIvPjwvZz48L3N2Zz4=')] opacity-20"></div>
             
             <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="none" className="z-10">
-              <path d="M0 250 L100 220 L200 240 L300 180 L400 200 L500 100 L600 150 L700 80 L800 110 L900 40 L1000 60" 
+              {/* Dynamic Price Line */}
+              <path d={chartPath} 
                     fill="none" stroke={themeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               {/* Gradient Fill under the line */}
-              <path d="M0 250 L100 220 L200 240 L300 180 L400 200 L500 100 L600 150 L700 80 L800 110 L900 40 L1000 60 L1000 300 L0 300 Z" 
+              <path d={`${chartPath} L1000 300 L0 300 Z`} 
                     fill={`url(#gradient-${themeColor.replace('#', '')})`} opacity="0.2" />
               <defs>
                 <linearGradient id={`gradient-${themeColor.replace('#', '')}`} x1="0" x2="0" y1="0" y2="1">

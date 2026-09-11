@@ -100,9 +100,9 @@ export const updateMarkPrice = async (perpMarketId: string, network: string) => 
         // 4. Premium TWAP = Perp TWAP - Index Price
         const premiumTwap = perpTwap - indexPrice;
 
-        // 5. Final Mark Price = Index Price + Premium TWAP (clamped between 0 and 1)
+        // 5. Final Mark Price = Index Price + Premium TWAP
         let markPrice = indexPrice + premiumTwap;
-        markPrice = Math.max(0, Math.min(1, markPrice));
+
 
         // Save Mark Price
         await supabase.from('perp_mark_prices').insert({

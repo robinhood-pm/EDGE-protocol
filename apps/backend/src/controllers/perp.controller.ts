@@ -43,13 +43,25 @@ export const getPerpMarketDetail = async (req: Request, res: Response) => {
         const { data: indexPrice } = await supabase.from('perp_index_prices').select('price').eq('market_id', marketId).order('timestamp', { ascending: false }).limit(1).single();
         const { data: fundingRate } = await supabase.from('perp_funding_rates').select('rate').eq('market_id', marketId).order('timestamp', { ascending: false }).limit(1).single();
 
+        // Fetch last 50 mark prices for the chart
+        const { data: priceHistoryData } = await supabase
+            .from('perp_mark_prices')
+            .select('price, timestamp')
+            .eq('market_id', marketId)
+            .order('timestamp', { ascending: false })
+            .limit(50);
+            
+        // Reverse so the oldest is first, newest is last (left to right on chart)
+        const priceHistory = priceHistoryData ? priceHistoryData.reverse() : [];
+
         res.json({
             success: true,
             market: {
                 ...market,
                 currentMarkPrice: markPrice?.price || null,
                 currentIndexPrice: indexPrice?.price || null,
-                currentFundingRate: fundingRate?.rate || null
+                currentFundingRate: fundingRate?.rate || null,
+                priceHistory
             }
         });
     } catch (error: any) {
