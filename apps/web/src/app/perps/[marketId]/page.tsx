@@ -19,6 +19,8 @@ export default function PerpTradingTerminal() {
   const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState('1');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modal, setModal] = useState<{ show: boolean; success: boolean; message: string; orderId?: string }>({ show: false, success: false, message: '' });
+  const [copied, setCopied] = useState(false);
 
   const handleSubmitOrder = async () => {
     if (!address || !size || !price) return;
@@ -54,14 +56,14 @@ export default function PerpTradingTerminal() {
 
       const data = await res.json();
       if (data.success) {
-        alert("Order submitted successfully!");
+        setModal({ show: true, success: true, message: 'Order submitted successfully!', orderId: data.orderId });
         setSize('');
         setPrice('');
       } else {
-        alert(`Failed: ${data.error}`);
+        setModal({ show: true, success: false, message: data.error });
       }
     } catch (err: any) {
-      alert(`Error signing/submitting: ${err.message}`);
+      setModal({ show: true, success: false, message: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -359,6 +361,61 @@ export default function PerpTradingTerminal() {
           background: rgba(255, 255, 255, 0.2);
         }
       `}} />
+
+      {/* Order Result Modal */}
+      {modal.show && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setModal({ ...modal, show: false })}>
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              {modal.success ? (
+                <div className="w-16 h-16 rounded-full bg-[#00C805]/10 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00C805" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-[#FF5000]/10 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF5000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-center mb-2" style={{ color: modal.success ? '#00C805' : '#FF5000' }}>
+              {modal.success ? 'Order Submitted' : 'Order Failed'}
+            </h3>
+            <p className="text-white/60 text-center text-sm mb-5">{modal.message}</p>
+
+            {/* Order ID (copyable) */}
+            {modal.success && modal.orderId && (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-5">
+                <p className="text-xs text-white/40 mb-1">Order ID</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs font-mono text-white/80 break-all">{modal.orderId}</code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(modal.orderId || '');
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex-shrink-0 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    {copied ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <button
+              onClick={() => setModal({ ...modal, show: false })}
+              className="w-full py-3 rounded-xl font-semibold text-sm transition-colors"
+              style={{ backgroundColor: modal.success ? '#00C805' : '#FF5000', color: '#000' }}
+            >
+              {modal.success ? 'Done' : 'Close'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

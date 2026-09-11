@@ -112,6 +112,9 @@ export const submitPerpOrder = async (req: Request, res: Response) => {
         // Generate ID
         const orderId = `${trader}-${marketId}-${nonce}`;
 
+        // Convert expiration from Unix ms to ISO string for TIMESTAMPTZ column
+        const expirationDate = new Date(Number(expiration)).toISOString();
+
         // Insert into DB as OPEN
         const { error } = await supabase.from('perp_orders').insert({
             id: orderId,
@@ -125,7 +128,7 @@ export const submitPerpOrder = async (req: Request, res: Response) => {
             leverage,
             signature,
             nonce,
-            expiration,
+            expiration: expirationDate,
             status: 'OPEN'
         });
 
