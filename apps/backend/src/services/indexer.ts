@@ -6,10 +6,15 @@ const EXCHANGE_ABI = [
   "event OrderMatched(bytes32 buyOrderHash, bytes32 sellOrderHash, address indexed buyer, address indexed seller, uint256 marketId, uint8 outcome, uint256 amount, uint256 price)"
 ];
 
+const PERP_EXCHANGE_ABI = [
+  "event PerpOrderMatched(address indexed longTrader, address indexed shortTrader, uint256 marketId, uint256 size, uint256 price)"
+];
+
 export const startIndexer = () => {
-  const rpcUrl = process.env.ROBINHOOD_RPC_URL;
+  const rpcUrl = process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL;
   const exchangeAddress = process.env.EXCHANGE_ADDRESS;
-  const network = process.env.NETWORK || 'TESTNET';
+  const perpExchangeAddress = process.env.PERP_EXCHANGE_ADDRESS;
+  const network = process.env.NETWORK || 'testnet';
 
   if (!rpcUrl || !exchangeAddress) {
     console.warn("⚠️ [Indexer] Missing ROBINHOOD_RPC_URL or EXCHANGE_ADDRESS. Indexer not started.");
@@ -73,4 +78,27 @@ export const startIndexer = () => {
       console.error(`[Indexer] ❌ Error processing OrderMatched event:`, error);
     }
   });
+
+  if (perpExchangeAddress) {
+    const perpExchangeContract = new ethers.Contract(perpExchangeAddress, PERP_EXCHANGE_ABI, provider);
+    console.log(`📡 [Indexer] Listening to PerpExchange at ${perpExchangeAddress} on ${network}`);
+
+    perpExchangeContract.on("PerpOrderMatched", async (longTrader, shortTrader, marketIdRaw, sizeRaw, priceRaw, event) => {
+      try {
+        const marketId = marketIdRaw.toString();
+        const size = Number(ethers.formatUnits(sizeRaw, 18));
+        const price = Number(ethers.formatUnits(priceRaw, 18));
+        const txHash = event.log.transactionHash;
+
+        console.log(`[Indexer] 🟣 PerpOrderMatched! Market: ${marketId}, Long: ${longTrader}, Short: ${shortTrader}, Price: ${price}, Size: ${size}`);
+
+        // Update DB logic here if necessary, but perpsMatchingEngine handles optimistic inserts for off-chain speed.
+        // In a strict on-chain indexer architecture, we'd insert into perp_fills here.
+      } catch (error) {
+        console.error(`[Indexer] ❌ Error processing PerpOrderMatched event:`, error);
+      }
+    });
+  } else {
+    console.warn("⚠️ [Indexer] Missing PERP_EXCHANGE_ADDRESS. Perp indexing disabled.");
+  }
 };

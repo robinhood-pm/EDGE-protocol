@@ -19,6 +19,9 @@ export function Header() {
             <Link href="/markets" className="hover:text-white transition-colors">
               Markets
             </Link>
+            <Link href="/perps" className="hover:text-white transition-colors">
+              Perps
+            </Link>
             <Link href="/portfolio" className="hover:text-white transition-colors">
               Portfolio
             </Link>
