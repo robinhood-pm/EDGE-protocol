@@ -202,15 +202,36 @@ export default function PerpTradingTerminal() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {positions.map(p => (
-                    <tr key={p.id}>
-                      <td className={`py-3 font-medium ${p.side === 'LONG' ? 'text-[#00C805]' : 'text-[#FF5000]'}`}>{p.side}</td>
-                      <td className="py-3 font-mono">{p.size}</td>
-                      <td className="py-3 font-mono">${Number(p.entry_price).toFixed(4)}</td>
-                      <td className="py-3 font-mono text-white/60">--</td>
-                      <td className="py-3 font-mono text-right text-white/60">--</td>
-                    </tr>
-                  ))}
+                  {positions.map(p => {
+                    const entry = Number(p.entry_price);
+                    const size = Number(p.size);
+                    const lev = Number(p.leverage) || 1;
+                    const mmr = Number(marketStats?.maintenance_margin_rate || 0.05);
+                    const markPrice = Number(marketStats?.currentMarkPrice || marketStats?.currentIndexPrice || entry);
+                    
+                    let pnl = 0;
+                    let liqPrice = 0;
+                    
+                    if (p.side === 'LONG') {
+                      pnl = (markPrice - entry) * size;
+                      liqPrice = entry * (1 - 1/lev + mmr);
+                    } else {
+                      pnl = (entry - markPrice) * size;
+                      liqPrice = entry * (1 + 1/lev - mmr);
+                    }
+                    
+                    return (
+                      <tr key={p.id}>
+                        <td className={`py-3 font-medium ${p.side === 'LONG' ? 'text-[#00C805]' : 'text-[#FF5000]'}`}>{p.side}</td>
+                        <td className="py-3 font-mono">{p.size}</td>
+                        <td className="py-3 font-mono">${entry.toFixed(4)}</td>
+                        <td className="py-3 font-mono text-white/80">${liqPrice.toFixed(4)}</td>
+                        <td className={`py-3 font-mono text-right ${pnl >= 0 ? 'text-[#00C805]' : 'text-[#ef4444]'}`}>
+                          {pnl >= 0 ? '+' : ''}{pnl.toFixed(4)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             ) : (

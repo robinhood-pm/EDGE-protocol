@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
@@ -102,7 +102,7 @@ export function usePerpMarket(marketId: string) {
     }, [marketId]);
 
     // Fetch user positions
-    const fetchPositions = async (traderAddress: string) => {
+    const fetchPositions = React.useCallback(async (traderAddress: string) => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const network = process.env.NEXT_PUBLIC_NETWORK;
         try {
@@ -112,7 +112,7 @@ export function usePerpMarket(marketId: string) {
         } catch (err) {
             console.error("Failed to fetch positions:", err);
         }
-    };
+    }, []);
 
     return {
         marketStats,

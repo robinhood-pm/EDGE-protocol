@@ -34,7 +34,7 @@ export const getPerpMarketDetail = async (req: Request, res: Response) => {
             .from('perp_markets')
             .select('*')
             .eq('id', marketId)
-            .eq('network', network as string)
+            .ilike('network', network as string)
             .single();
 
         if (mErr) throw mErr;
@@ -82,7 +82,7 @@ export const getPerpOrderbook = async (req: Request, res: Response) => {
             .from('perp_orders')
             .select('*')
             .eq('market_id', marketId)
-            .eq('network', network as string)
+            .ilike('network', network as string)
             .eq('status', 'OPEN');
 
         if (error) throw error;
@@ -155,8 +155,8 @@ export const getPerpPositions = async (req: Request, res: Response) => {
         const { data: positions, error } = await supabase
             .from('perp_positions')
             .select('*')
-            .eq('trader', trader as string)
-            .eq('network', network as string)
+            .ilike('trader', trader as string)
+            .ilike('network', network as string)
             .eq('status', 'OPEN');
 
         if (error) throw error;

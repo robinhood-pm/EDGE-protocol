@@ -1,9 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/organisms/Header';
 import { BarChart3, TrendingUp, CloudRain } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
+
+// Simple function to generate a stable pseudo-random sparkline based on market string ID
+const generateSparkline = (id: string) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  let val = 50 + (hash % 20);
+  const data = [];
+  for (let i = 0; i < 20; i++) {
+    val += (hash % 5) - 2 + Math.sin(i + hash) * 3;
+    data.push({ value: val });
+  }
+  const isUp = data[data.length - 1].value >= data[0].value;
+  return { data, isUp };
+};
 
 export default function PerpsDashboard() {
   const [markets, setMarkets] = useState<any[]>([]);
@@ -26,15 +41,6 @@ export default function PerpsDashboard() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
-      {/* Optional: we could add CategoryTabs here in the future to match exactly */}
-      <div className="border-b border-border bg-card/30 backdrop-blur-xl sticky top-[73px] z-40">
-        <div className="container max-w-screen-2xl mx-auto px-4 h-14 flex items-center gap-6 overflow-x-auto no-scrollbar">
-          <button className="whitespace-nowrap pb-4 pt-4 px-1 border-b-2 border-primary text-primary font-medium transition-colors">
-            All Perpetual Markets
-          </button>
-        </div>
-      </div>
 
       <main className="flex-1 container max-w-screen-2xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
@@ -76,16 +82,9 @@ export default function PerpsDashboard() {
               
               return (
               <Link key={market.id} href={`/perps/${market.id}`} className="block h-full">
-                <div className="rounded-xl border border-border bg-card hover:bg-white/[0.02] hover:border-white/20 transition-all group relative overflow-hidden flex flex-col h-full">
+                <div className="relative bg-[#070709] rounded-2xl border border-white/10 overflow-hidden hover:border-white/30 transition-colors cursor-pointer group flex flex-col h-full">
                   
-                  {/* Background pattern/icon */}
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
-                    {isWeather ? (
-                       <CloudRain className="w-24 h-24 text-primary" />
-                    ) : (
-                       <TrendingUp className="w-24 h-24 text-primary" />
-                    )}
-                  </div>
+                  {/* Card Content */}
                   
                   <div className="p-5 flex flex-col flex-1 relative z-10">
                     <div className="flex justify-between items-start mb-3">
@@ -104,21 +103,31 @@ export default function PerpsDashboard() {
                       {market.id.replace('PERP-', '').replace(/-/g, ' ')}
                     </h2>
                     
-                    <div className="mt-auto space-y-2">
-                      <div className="flex justify-between items-center text-sm py-1.5 border-t border-border/50">
-                        <span className="text-muted">Initial Margin</span>
+                    {/* Sparkline Chart Preview */}
+                    <div className="h-16 w-full mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={generateSparkline(market.id).data}>
+                          <Line 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke={generateSparkline(market.id).isUp ? "#00C805" : "#ef4444"} 
+                            strokeWidth={2} 
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <div className="mt-auto flex gap-4 text-xs pt-4 border-t border-border/50">
+                      <div className="flex flex-col">
+                        <span className="text-muted mb-0.5">Initial Margin</span>
                         <span className="font-mono text-white/80">{(Number(market.initial_margin_rate) * 100).toFixed(0)}%</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm py-1.5 border-t border-border/50">
-                        <span className="text-muted">Maint. Margin</span>
+                      <div className="flex flex-col">
+                        <span className="text-muted mb-0.5">Maint. Margin</span>
                         <span className="font-mono text-white/80">{(Number(market.maintenance_margin_rate) * 100).toFixed(0)}%</span>
                       </div>
-                    </div>
-
-                    <div className="mt-5 pt-4 border-t border-border flex justify-between items-center">
-                      <span className="text-primary text-sm font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        Trade Now →
-                      </span>
                     </div>
                   </div>
                 </div>
