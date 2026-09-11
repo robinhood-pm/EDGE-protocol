@@ -100,7 +100,25 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                 };
 
                 // 3. AMM signs the counter-order off-chain
+                console.log(`[Perp Matching Engine] AMM ORDER TUPLE:`, JSON.stringify({
+                    ...ammOrderTuple,
+                    size: ammOrderTuple.size.toString(),
+                    price: ammOrderTuple.price.toString(),
+                    margin: ammOrderTuple.margin.toString(),
+                    leverage: ammOrderTuple.leverage.toString(),
+                    perpMarketId: ammOrderTuple.perpMarketId.toString(),
+                    nonce: ammOrderTuple.nonce.toString(),
+                    expiration: ammOrderTuple.expiration.toString()
+                }, null, 2));
+                console.log(`[Perp Matching Engine] DOMAIN:`, JSON.stringify(DOMAIN, null, 2));
+                console.log(`[Perp Matching Engine] Relayer address (signer): ${relayer.address}`);
+                
                 const ammSignature = await relayer.signTypedData(DOMAIN, TYPES, ammOrderTuple);
+                console.log(`[Perp Matching Engine] AMM Signature: ${ammSignature}`);
+
+                // Verify locally before sending
+                const recoveredAddress = ethers.verifyTypedData(DOMAIN, TYPES, ammOrderTuple, ammSignature);
+                console.log(`[Perp Matching Engine] LOCAL VERIFY - Recovered: ${recoveredAddress}, Expected: ${ammOrderTuple.maker}, Match: ${recoveredAddress.toLowerCase() === ammOrderTuple.maker.toLowerCase()}`);
 
                 // 4. Relay to Smart Contract
                 const longOrder = order.side === 'LONG' ? userOrderTuple : ammOrderTuple;
