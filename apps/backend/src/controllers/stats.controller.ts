@@ -9,7 +9,7 @@ export const getGlobalStats = async (req: Request, res: Response) => {
     const { data: marketsData, error: marketsError } = await supabase
       .from('markets')
       .select('status, total_volume_usdg')
-      .eq('network', network);
+      .ilike('network', network);
       
     if (marketsError) throw marketsError;
     
@@ -27,7 +27,7 @@ export const getGlobalStats = async (req: Request, res: Response) => {
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
       .select('wallet_address')
-      .eq('network', network);
+      .ilike('network', network);
       
     if (ordersError) throw ordersError;
     

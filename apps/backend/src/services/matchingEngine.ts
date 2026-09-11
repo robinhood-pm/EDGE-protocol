@@ -69,9 +69,8 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
                                     });
 
                                     const tradeVolume = tradePrice * tradeAmount;
-                                    try {
-                                        await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
-                                    } catch (err) {
+                                    const { error: rpcErr } = await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
+                                    if (rpcErr) {
                                         const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
                                         if (m) {
                                             await supabase.from('markets').update({ total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, current_yes_probability: tradePrice * 100 }).eq('id', marketId).eq('network', network);
@@ -106,9 +105,8 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
                                 });
 
                                 const tradeVolume = tradePrice * tradeAmount;
-                                try {
-                                    await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
-                                } catch (err2) {
+                                const { error: rpcErr2 } = await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
+                                if (rpcErr2) {
                                     const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
                                     if (m) {
                                         await supabase.from('markets').update({ total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, current_yes_probability: tradePrice * 100 }).eq('id', marketId).eq('network', network);
