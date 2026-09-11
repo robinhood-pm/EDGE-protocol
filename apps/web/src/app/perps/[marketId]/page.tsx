@@ -194,6 +194,7 @@ export default function PerpTradingTerminal() {
               <table className="w-full text-left text-sm">
                 <thead className="text-white/40 border-b border-white/10">
                   <tr>
+                    <th className="pb-2">Market</th>
                     <th className="pb-2">Side</th>
                     <th className="pb-2">Size</th>
                     <th className="pb-2">Entry Price</th>
@@ -222,6 +223,9 @@ export default function PerpTradingTerminal() {
                     
                     return (
                       <tr key={p.id}>
+                        <td className="py-3 font-semibold text-white/90">
+                          {p.market_id.replace('PERP-', '').replace(/-/g, ' ')}
+                        </td>
                         <td className={`py-3 font-medium ${p.side === 'LONG' ? 'text-[#00C805]' : 'text-[#FF5000]'}`}>{p.side}</td>
                         <td className="py-3 font-mono">{p.size}</td>
                         <td className="py-3 font-mono">${entry.toFixed(4)}</td>

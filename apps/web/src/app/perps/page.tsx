@@ -6,19 +6,7 @@ import { Header } from '@/components/organisms/Header';
 import { BarChart3, TrendingUp, CloudRain } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
-// Simple function to generate a stable pseudo-random sparkline based on market string ID
-const generateSparkline = (id: string) => {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  let val = 50 + (hash % 20);
-  const data = [];
-  for (let i = 0; i < 20; i++) {
-    val += (hash % 5) - 2 + Math.sin(i + hash) * 3;
-    data.push({ value: val });
-  }
-  const isUp = data[data.length - 1].value >= data[0].value;
-  return { data, isUp };
-};
+
 
 export default function PerpsDashboard() {
   const [markets, setMarkets] = useState<any[]>([]);
@@ -105,18 +93,22 @@ export default function PerpsDashboard() {
                     
                     {/* Sparkline Chart Preview */}
                     <div className="h-16 w-full mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={generateSparkline(market.id).data}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke={generateSparkline(market.id).isUp ? "#00C805" : "#ef4444"} 
-                            strokeWidth={2} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      {market.priceHistory && market.priceHistory.length > 1 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={market.priceHistory}>
+                            <Line 
+                              type="monotone" 
+                              dataKey="price" 
+                              stroke={Number(market.priceHistory[market.priceHistory.length - 1].price) >= Number(market.priceHistory[0].price) ? "#00C805" : "#ef4444"} 
+                              strokeWidth={2} 
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-muted">No price data</div>
+                      )}
                     </div>
                     
                     <div className="mt-auto flex gap-4 text-xs pt-4 border-t border-border/50">

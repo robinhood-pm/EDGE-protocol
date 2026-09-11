@@ -15,7 +15,26 @@ export const getPerpMarkets = async (req: Request, res: Response) => {
 
         if (error) throw error;
 
-        res.json({ success: true, markets });
+        // Fetch recent price history for all markets for sparklines
+        const { data: recentPrices, error: pErr } = await supabase
+            .from('perp_mark_prices')
+            .select('market_id, price')
+            .order('timestamp', { ascending: false })
+            // We fetch more items overall, but we will group them manually
+            // A better way would be lateral joins, but this works for MVP
+
+        let marketsWithHistory = markets;
+        if (!pErr && recentPrices) {
+            marketsWithHistory = markets.map(market => {
+                const history = recentPrices
+                    .filter(p => p.market_id === market.id)
+                    .slice(0, 20)
+                    .reverse();
+                return { ...market, priceHistory: history };
+            });
+        }
+
+        res.json({ success: true, markets: marketsWithHistory });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
