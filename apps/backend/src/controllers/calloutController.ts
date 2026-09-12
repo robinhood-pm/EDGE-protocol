@@ -60,16 +60,20 @@ export async function listCalloutsHandler(req: Request, res: Response): Promise<
     const status = req.query.status as string | undefined;
     const creatorId = req.query.creatorId as string | undefined;
     const marketId = req.query.marketId as string | undefined;
-    const limit = Number(req.query.limit) || 20;
-    const offset = Number(req.query.offset) || 0;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const offset = req.query.offset ? Number(req.query.offset) : undefined;
+
+    console.log(`[CalloutController] Listing callouts: network=${network}, category=${category || 'all'}, limit=${limit || 'all'}`);
 
     const callouts = await listCallouts(
       { category, status, creatorId, marketId, limit, offset },
       network
     );
 
+    console.log(`[CalloutController] Returning ${callouts.length} callouts`);
     res.json({ success: true, callouts });
   } catch (error: any) {
+    console.error(`[CalloutController] Error listing callouts:`, error?.message || error);
     res.status(500).json({ success: false, error: error?.message || 'Internal server error' });
   }
 }

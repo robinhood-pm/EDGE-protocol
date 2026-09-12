@@ -8,49 +8,56 @@ const formatPrice = (priceStr: string) => {
 
 export const getMarkets = async (req: Request, res: Response) => {
   try {
-    const network = process.env.NETWORK || 'TESTNET';
+    const network = (process.env.NETWORK || 'TESTNET').toLowerCase();
     const { filter, category } = req.query;
 
-    let query = supabase
-      .from('markets')
-      .select('*')
-      .eq('network', network);
+    console.log(`[MarketController] Fetching markets: filter=${filter || 'all'}, category=${category || 'all'}`);
+
+    let query = supabase.from('markets').select('*');
 
     // Dynamic filters
     if (filter === 'Live') {
       query = query.eq('status', 'OPEN');
     }
 
-    // Exact category filter
+    // Category filter
     if (category) {
-      query = query.eq('category', String(category));
+      query = query.ilike('category', String(category));
     }
 
     // Ordering based on filter
     if (filter === 'Trending') {
       query = query.order('total_volume_usdg', { ascending: false });
-    } else if (filter === 'New') {
-      query = query.order('created_at', { ascending: false });
     } else {
       query = query.order('created_at', { ascending: false });
     }
 
-    const { data, error } = await query;
+    // Try query with network filter
+    let netQuery = query.or(`network.ilike.${network},network.is.null`);
+    let { data, error } = await netQuery;
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    // Fallback if network-filtered query fails or returns empty data
+    if (error || !data || data.length === 0) {
+      if (error) {
+        console.warn('[MarketController] Primary query warning:', error.message);
+      }
+      const { data: fallbackData, error: fbErr } = await query;
+      if (!fbErr && fallbackData && fallbackData.length > 0) {
+        data = fallbackData;
+      }
     }
 
-    const formattedMarkets = data.map(market => {
-      const yesProb = Number(market.current_yes_probability);
+    const rawList = data || [];
+    const formattedMarkets = rawList.map((market: any) => {
+      const yesProb = Number(market.current_yes_probability ?? 50);
       const noProb = 100 - yesProb;
       return {
         id: market.id,
-        title: market.title,
-        slug: market.slug,
-        image: market.image_url || 'https://via.placeholder.com/150',
-        status: market.status === 'OPEN' ? 'Live' : market.status,
-        totalVolume: Number(market.total_volume_usdg),
+        title: market.title || 'Untitled Market',
+        slug: market.slug || market.id,
+        image: market.image_url || '',
+        status: market.status === 'OPEN' ? 'Live' : (market.status || 'Live'),
+        totalVolume: Number(market.total_volume_usdg || 0),
         currentPrice: yesProb / 100,
         yesProbability: Math.round(yesProb),
         noProbability: Math.round(noProb),
@@ -59,16 +66,13 @@ export const getMarkets = async (req: Request, res: Response) => {
       };
     });
 
-    // Count live markets (only if no exact category filter is applied, or count them independently)
-    const { count: liveCount } = await supabase
-      .from('markets')
-      .select('*', { count: 'exact', head: true })
-      .eq('network', network)
-      .eq('status', 'OPEN');
+    const liveCount = rawList.filter((m: any) => m.status === 'OPEN' || m.status === 'Live').length;
 
-    res.json({ markets: formattedMarkets, liveCount: liveCount || 0 });
+    console.log(`[MarketController] Returning ${formattedMarkets.length} markets (live: ${liveCount})`);
+    res.json({ markets: formattedMarkets, liveCount });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[MarketController] Error in getMarkets:', err?.message || err);
+    res.status(500).json({ error: err?.message || 'Internal server error', markets: [], liveCount: 0 });
   }
 };
 
@@ -249,12 +253,16 @@ export const getMarketById = async (req: Request, res: Response) => {
 
 export const createMarket = async (req: Request, res: Response) => {
   try {
-    const { id, title, slug, description, image_url, resolution_rules, close_time, resolver_address, category } = req.body;
-    const network = process.env.NETWORK || 'TESTNET';
+    const { id, title, slug, description, image_url, resolution_rules, close_time, resolver_address, category, network: bodyNetwork } = req.body;
+    const network = bodyNetwork || process.env.NETWORK || 'TESTNET';
 
     if (!id || !title || !close_time || !resolver_address) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    const networkTag = network.toLowerCase();
+    const baseSlug = (slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+    const finalSlug = baseSlug.endsWith(`-${networkTag}`) ? baseSlug : `${baseSlug}-${networkTag}`;
 
     const { data, error } = await supabase
       .from('markets')
@@ -263,7 +271,7 @@ export const createMarket = async (req: Request, res: Response) => {
           id: id.toString(),
           network,
           title,
-          slug,
+          slug: finalSlug,
           description,
           image_url,
           resolution_rules,

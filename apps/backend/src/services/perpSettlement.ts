@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import { ethers } from 'ethers';
+import { getStaticProvider, safeAddress } from '../utils/provider';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -55,9 +56,9 @@ export const runPerpSettlementCheck = async () => {
 
                 if (process.env.RELAYER_PRIVATE_KEY && process.env.PERP_SETTLEMENT_ADDRESS) {
                     try {
-                        const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
+                        const provider = getStaticProvider();
                         const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY, provider);
-                        const settlementContract = new ethers.Contract(process.env.PERP_SETTLEMENT_ADDRESS, PERP_SETTLEMENT_ABI, relayer);
+                        const settlementContract = new ethers.Contract(safeAddress(process.env.PERP_SETTLEMENT_ADDRESS), PERP_SETTLEMENT_ABI, relayer);
 
                         const finalPriceWei = ethers.parseUnits(finalPrice.toFixed(18), 18);
                         

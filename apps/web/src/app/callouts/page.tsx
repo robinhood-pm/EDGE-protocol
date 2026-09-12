@@ -38,12 +38,16 @@ export default function SocialFeedPage() {
         ? `${backendUrl}/api/feed/following?network=${network}`
         : `${backendUrl}/api/callouts?network=${network}${categoryParam}`;
 
+    console.log(`[Frontend /callouts] 🚀 Fetching callouts from: ${endpoint}`);
+
     fetch(endpoint)
       .then((res) => {
-        if (!res.ok) throw new Error('API fetch error');
+        console.log(`[Frontend /callouts] 📥 Response status: ${res.status}`);
+        if (!res.ok) throw new Error(`API fetch error with status ${res.status}`);
         return res.json();
       })
       .then((data) => {
+        console.log(`[Frontend /callouts] ✅ Received data:`, data);
         if (data.success && Array.isArray(data.callouts)) {
           setCallouts(data.callouts);
         } else {
@@ -51,52 +55,15 @@ export default function SocialFeedPage() {
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch real callouts:', err);
+        console.error('[Frontend /callouts] ❌ Failed to fetch real callouts:', err);
         setCallouts([]);
       })
       .finally(() => setIsLoading(false));
   }, [activeTab, activeCategory]);
 
 
-  const [hasSidebarData, setHasSidebarData] = useState<boolean>(true);
-
-  useEffect(() => {
-    async function checkSidebar() {
-      try {
-        const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const backendUrl = rawApiUrl ? rawApiUrl : '';
-        const rawNetwork = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
-
-        const [leaderboardRes, calloutsRes] = await Promise.allSettled([
-          fetch(`${backendUrl}/api/leaderboard?period=all_time&network=${rawNetwork}`),
-          fetch(`${backendUrl}/api/callouts?network=${rawNetwork}&limit=3`),
-        ]);
-
-        let hasCallers = false;
-        let hasCallouts = false;
-
-        if (leaderboardRes.status === 'fulfilled' && leaderboardRes.value.ok) {
-          const lbData = await leaderboardRes.value.json();
-          if (lbData.success && Array.isArray(lbData.leaderboard) && lbData.leaderboard.length > 0) {
-            hasCallers = true;
-          }
-        }
-
-        if (calloutsRes.status === 'fulfilled' && calloutsRes.value.ok) {
-          const coData = await calloutsRes.value.json();
-          if (coData.success && Array.isArray(coData.callouts) && coData.callouts.length > 0) {
-            hasCallouts = true;
-          }
-        }
-
-        setHasSidebarData(hasCallers || hasCallouts);
-      } catch (err) {
-        setHasSidebarData(false);
-      }
-    }
-
-    checkSidebar();
-  }, []);
+  // Sidebar state
+  const hasSidebarData = true;
 
   // Apply sub-filter
   const filteredCallouts = callouts.filter((c) => {

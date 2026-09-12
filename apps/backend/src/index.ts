@@ -10,6 +10,18 @@ const PORT = process.env.PORT || '3001';
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  const { method, originalUrl } = req;
+  console.log(`[HTTP IN] ➡️ ${method} ${originalUrl}`);
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[HTTP OUT] ⬅️ ${method} ${originalUrl} -> ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
 import marketRoutes from './routes/market.routes';
 import orderRoutes from './routes/order.routes';
 import logRoutes from './routes/log.routes';
@@ -67,21 +79,28 @@ import { startRealOracleFeedService } from './services/realOracleService';
 app.listen(PORT, () => {
   console.log(`🚀 Backend is running on http://localhost:${PORT}`);
   
-  // Start Core Indexer & Financial Engines
-  startIndexer();
-  startProbabilityIndexEngine();
-  startMarkPriceEngine();
-  startFundingEngine();
-  startLiquidationMonitor();
-  startPerpSettlementMonitor();
+  // Core Indexer & Financial Engines (enabled when ENABLE_BACKGROUND_ENGINES=true)
+  if (process.env.ENABLE_BACKGROUND_ENGINES === 'true') {
+    console.log(`⚙️ Starting Background Indexers & Financial Engines...`);
+    startIndexer();
+    startProbabilityIndexEngine();
+    startMarkPriceEngine();
+    startFundingEngine();
+    startLiquidationMonitor();
+    startPerpSettlementMonitor();
+  } else {
+    console.log(`⚡ Background Indexers disabled for fast API performance (ENABLE_BACKGROUND_ENGINES != true)`);
+  }
 
-  // Start Real Oracle Live Data Feed & Testnet Engine
-  if (process.env.ENABLE_AUTO_BOTS !== 'false') {
+  // Live Oracle Feed & Trading Bots (enabled when ENABLE_AUTO_BOTS=true)
+  if (process.env.ENABLE_AUTO_BOTS === 'true') {
     console.log(`📡 Starting Real Testnet Live Oracle Data Feed & Matching Workers...`);
     startRealOracleFeedService();
     startMatchingEngineRunner();
     startTradingBotService();     // Perpetual Futures Bot
     startSpotTradingBotService(); // Spot Prediction Market Bot
     startCalloutBotService();     // Callout Prophet Bot
+  } else {
+    console.log(`⚡ Auto Bots disabled for fast API performance (ENABLE_AUTO_BOTS != true)`);
   }
 });

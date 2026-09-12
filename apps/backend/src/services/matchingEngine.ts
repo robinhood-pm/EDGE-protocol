@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import { ethers } from 'ethers';
+import { getStaticProvider } from '../utils/provider';
 import * as dotenv from 'dotenv';
 import { updateUserTradeStats } from './userService';
 
@@ -37,7 +38,7 @@ export const matchOrdersAsync = async (marketId: string, network: string) => {
                             console.log(`[Matching Engine] Found match! Buy: ${buy.id} (${buy.price}) Sell: ${sell.id} (${sell.price})`);
                             
                             try {
-                                const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
+                                const provider = getStaticProvider();
                                 const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001', provider);
                                 const exchange = new ethers.Contract(process.env.EXCHANGE_ADDRESS || '0x', EXCHANGE_ABI, relayer);
 

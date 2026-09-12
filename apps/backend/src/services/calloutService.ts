@@ -142,31 +142,58 @@ async function enrichCalloutRows(data: any[], network: NetworkType) {
   if (!data || data.length === 0) return [];
   const supabase = getSupabaseClient();
 
-  const creatorIds = Array.from(new Set(data.map((c: any) => c.creator_id).filter(Boolean)));
   const userMap = new Map<string, any>();
   let userList: any[] = [];
 
-  try {
-    const { data: userRows } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: true });
+  const creatorIds = Array.from(new Set(data.map((c: any) => c.creator_id).filter(Boolean)));
 
-    if (userRows && userRows.length > 0) {
-      userList = userRows;
-      userRows.forEach((u: any) => {
-        if (u.id) userMap.set(u.id, u);
-        if (u.wallet_address) userMap.set(u.wallet_address.toLowerCase(), u);
-      });
+  try {
+    if (creatorIds.length > 0) {
+      const uuids = creatorIds.filter(id => typeof id === 'string' && !id.startsWith('0x'));
+      const wallets = creatorIds.filter(id => typeof id === 'string' && id.startsWith('0x')).map(w => w.toLowerCase());
+
+      let uQuery = supabase.from('users').select('*');
+      if (uuids.length > 0 && wallets.length > 0) {
+        uQuery = uQuery.or(`id.in.(${uuids.join(',')}),wallet_address.in.(${wallets.join(',')})`);
+      } else if (uuids.length > 0) {
+        uQuery = uQuery.in('id', uuids);
+      } else if (wallets.length > 0) {
+        uQuery = uQuery.in('wallet_address', wallets);
+      }
+
+      const { data: userRows } = await uQuery;
+      if (userRows && userRows.length > 0) {
+        userList = userRows;
+        userRows.forEach((u: any) => {
+          if (u.id) userMap.set(u.id, u);
+          if (u.wallet_address) userMap.set(u.wallet_address.toLowerCase(), u);
+        });
+      }
     }
   } catch (err) {
-    console.warn('[CalloutService] Failed to batch fetch users table:', err);
+    console.warn('[CalloutService] Failed to batch fetch target users:', err);
+  }
+
+  const marketIds = Array.from(new Set(data.map((c: any) => c.market_id).filter(Boolean)));
+  const marketMap = new Map<string, any>();
+  if (marketIds.length > 0) {
+    try {
+      const { data: marketRows } = await supabase
+        .from('markets')
+        .select('*')
+        .in('id', marketIds);
+      if (marketRows) {
+        marketRows.forEach((m: any) => marketMap.set(m.id, m));
+      }
+    } catch (err) {
+      console.warn('[CalloutService] Failed to batch fetch markets:', err);
+    }
   }
 
   return data.map((item: any, index: number) => {
     const rawWallet = item.creator_id ? item.creator_id.toLowerCase() : '';
     const userObj = userMap.get(item.creator_id) || userMap.get(rawWallet) || item.profiles || (userList.length > 0 ? userList[index % userList.length] : null);
-    const marketObj = item.markets;
+    const marketObj = item.markets || marketMap.get(item.market_id);
 
     const yesProb = marketObj
       ? Number(marketObj.current_yes_probability ?? 50)
@@ -247,9 +274,8 @@ export async function getCalloutById(
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('callouts')
-    .select('*, markets(*)')
+    .select('*')
     .eq('id', id)
-    .eq('network', network)
     .single();
 
   if (error || !data) {
@@ -276,11 +302,8 @@ export async function listCallouts(
 
   let query = supabase
     .from('callouts')
-    .select('*, markets(*)')
+    .select('*')
     .order('created_at', { ascending: false });
-
-  // Flexible network query: testnet or TESTNET or null
-  query = query.or(`network.ilike.${netStr},network.is.null`);
 
   if (filters.category) {
     query = query.ilike('category', filters.category);
@@ -295,25 +318,39 @@ export async function listCallouts(
     query = query.eq('market_id', filters.marketId);
   }
 
-  const limit = filters.limit || 20;
-  const offset = filters.offset || 0;
-  query = query.range(offset, offset + limit - 1);
+  // Execute query with network filter
+  let netQuery = query.or(`network.ilike.${netStr},network.is.null`);
+  if (filters.limit !== undefined) {
+    const limit = filters.limit;
+    const offset = filters.offset || 0;
+    netQuery = netQuery.range(offset, offset + limit - 1);
+  }
 
-  let { data, error } = await query;
+  let { data, error } = await netQuery;
 
+  // Fallback: If no records match network filter or if network query fails, return all callouts
   if (error || !data || data.length === 0) {
-    // Attempt fallback query without network filter to ensure DB callouts are fetched
     let fallbackQuery = supabase
       .from('callouts')
-      .select('*, markets(*)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (filters.category) {
       fallbackQuery = fallbackQuery.ilike('category', filters.category);
     }
-    fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
-    const { data: fallbackData } = await fallbackQuery;
+    if (filters.status) {
+      fallbackQuery = fallbackQuery.ilike('status', filters.status);
+    }
+    if (filters.limit !== undefined) {
+      const limit = filters.limit;
+      const offset = filters.offset || 0;
+      fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
+    }
 
+    const { data: fallbackData, error: fbError } = await fallbackQuery;
+    if (fbError) {
+      console.error('[CalloutService] listCallouts fallback error:', fbError.message);
+    }
     if (fallbackData && fallbackData.length > 0) {
       data = fallbackData;
     }

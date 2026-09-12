@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import { ethers } from 'ethers';
+import { getStaticProvider } from '../utils/provider';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -61,7 +62,7 @@ export const executeFundingCycle = async (perpMarketId: string, network: string)
         // 4. Submit to blockchain via Relayer
         if (process.env.RELAYER_PRIVATE_KEY && process.env.FUNDING_MODULE_ADDRESS) {
             try {
-                const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
+                const provider = getStaticProvider();
                 const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY, provider);
                 const fundingModule = new ethers.Contract(process.env.FUNDING_MODULE_ADDRESS, FUNDING_MODULE_ABI, relayer);
 

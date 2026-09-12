@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { supabase } from '../utils/supabase';
+import { getStaticProvider, safeAddress } from '../utils/provider';
 import { updateUserTradeStats } from './userService';
 
 // Minimal ABI to listen to OrderMatched
@@ -22,9 +23,9 @@ export const startIndexer = () => {
     return;
   }
 
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const exchangeContract = new ethers.Contract(exchangeAddress, EXCHANGE_ABI, provider);
-  const perpExchangeContract = perpExchangeAddress ? new ethers.Contract(perpExchangeAddress, PERP_EXCHANGE_ABI, provider) : null;
+  const provider = getStaticProvider(rpcUrl);
+  const exchangeContract = new ethers.Contract(safeAddress(exchangeAddress), EXCHANGE_ABI, provider);
+  const perpExchangeContract = perpExchangeAddress ? new ethers.Contract(safeAddress(perpExchangeAddress), PERP_EXCHANGE_ABI, provider) : null;
 
   console.log(`📡 [Indexer] Starting stateless block poll indexer on ${network}`);
 

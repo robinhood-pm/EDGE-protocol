@@ -105,7 +105,8 @@ async function main() {
           resolution_rules: market.resolution_rules,
           close_time: closeTimeUnix,
           resolver_address: deployer.address,
-          category: market.category || "General"
+          category: market.category || "General",
+          network: process.env.NETWORK || "MAINNET"
         })
       });
 

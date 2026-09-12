@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
+import { getStaticProvider } from '../utils/provider';
 import * as dotenv from 'dotenv';
-// In a real app, we would import the compiled ABI from a shared workspace package
-// For MVP, we will define a minimal ABI for the Exchange contract.
 
 dotenv.config();
 
@@ -23,7 +22,7 @@ export class RelayerService {
       throw new Error("Missing RELAYER_PRIVATE_KEY or EXCHANGE_ADDRESS in env");
     }
 
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
+    this.provider = getStaticProvider(rpcUrl);
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     this.exchangeContract = new ethers.Contract(exchangeAddress, EXCHANGE_ABI, this.wallet);
   }

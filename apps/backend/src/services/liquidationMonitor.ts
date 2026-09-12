@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import { ethers } from 'ethers';
+import { getStaticProvider } from '../utils/provider';
 import { calculatePositionEquity, calculateMaintenanceMargin } from './marginEngine';
 import * as dotenv from 'dotenv';
 
@@ -67,7 +68,7 @@ export const runLiquidationCheck = async () => {
                     // Send Liquidation Transaction to Chain
                     if (process.env.RELAYER_PRIVATE_KEY && process.env.LIQUIDATION_ENGINE_ADDRESS) {
                         try {
-                            const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL || process.env.RPC_URL);
+                            const provider = getStaticProvider();
                             const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY, provider);
                             const liquidationEngine = new ethers.Contract(process.env.LIQUIDATION_ENGINE_ADDRESS, LIQUIDATION_ENGINE_ABI, relayer);
 

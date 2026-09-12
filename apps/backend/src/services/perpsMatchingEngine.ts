@@ -1,6 +1,6 @@
 import { supabase } from '../utils/supabase';
 import { ethers } from 'ethers';
-import { validateOrderMargin } from './marginEngine';
+import { getStaticProvider } from '../utils/provider';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -33,7 +33,7 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
             "function applyRealizedPnL(address trader, uint256 amount, bool isProfit) external"
         ];
 
-        const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL!);
+        const provider = getStaticProvider();
         const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY!, provider);
         const exchange = new ethers.Contract(process.env.PERP_EXCHANGE_ADDRESS!, PERP_EXCHANGE_ABI, relayer);
         const marginVault = new ethers.Contract(process.env.MARGIN_VAULT_ADDRESS!, MARGIN_VAULT_ABI, relayer);

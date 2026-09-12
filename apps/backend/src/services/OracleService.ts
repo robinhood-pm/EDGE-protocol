@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { getStaticProvider } from '../utils/provider';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -21,7 +22,7 @@ export class OracleService {
       throw new Error("Missing ORACLE_PRIVATE_KEY or MARKET_FACTORY_ADDRESS in env");
     }
 
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
+    this.provider = getStaticProvider(rpcUrl);
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     this.marketFactoryContract = new ethers.Contract(factoryAddress, MARKET_FACTORY_ABI, this.wallet);
   }

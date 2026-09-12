@@ -236,6 +236,20 @@ export function startCalloutBotService() {
     }
   };
 
-  // Launch initial tick after 2s grace period for profile seeding
-  setTimeout(loop, 2000);
+  // Launch initial tick & batch seed if callout count is low
+  setTimeout(async () => {
+    try {
+      const { count } = await supabase.from('callouts').select('*', { count: 'exact', head: true });
+      if (!count || count < 10) {
+        console.log('🤖 [Callout Prophet Bot] Seeding initial batch of 10 callouts...');
+        for (let i = 0; i < 10; i++) {
+          await loop();
+        }
+      } else {
+        await loop();
+      }
+    } catch (e) {
+      loop();
+    }
+  }, 2000);
 }
