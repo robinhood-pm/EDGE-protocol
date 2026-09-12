@@ -14,15 +14,25 @@ export default function PerpsDashboard() {
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+    const network = process.env.NEXT_PUBLIC_NETWORK;
+    if (!apiUrl) {
+      setIsLoading(false);
+      return;
+    }
+
     fetch(`${apiUrl}/api/perps?network=${network}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+        return res.json();
+      })
       .then(data => {
-        if (data.success) {
+        if (data && data.success && Array.isArray(data.markets)) {
           setMarkets(data.markets);
         }
       })
-      .catch(console.error)
+      .catch(err => {
+        console.warn('[Perps Dashboard] Fetch perps markets error:', err.message || err);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 

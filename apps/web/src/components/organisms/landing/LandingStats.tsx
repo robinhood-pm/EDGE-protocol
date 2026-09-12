@@ -7,7 +7,8 @@ export const LandingStats = () => {
   const { data: stats } = useQuery({
     queryKey: ['globalStats'],
     queryFn: async () => {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!backendUrl) throw new Error('Missing backend URL');
       const res = await fetch(`${backendUrl}/api/stats`);
       if (!res.ok) throw new Error('Failed to fetch stats');
       return res.json();

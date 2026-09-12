@@ -25,8 +25,8 @@ export default function SocialFeedPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    const network = process.env.NEXT_PUBLIC_NETWORK;
     const endpoint =
       activeTab === 'following'
         ? `${backendUrl}/api/feed/following?userId=current-user&network=${network}`

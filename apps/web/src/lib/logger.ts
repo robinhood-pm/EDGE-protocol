@@ -1,6 +1,7 @@
 export const logActivity = async (action: string, details?: any, walletAddress?: string) => {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!backendUrl) return;
     
     // Fire and forget
     fetch(`${backendUrl}/api/logs`, {

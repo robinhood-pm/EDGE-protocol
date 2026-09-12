@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 // Initialize Supabase client
 // Note: Provide default dummy URL/anon key to avoid crashing if env isn't set up yet, 
 // but in production it should come from NEXT_PUBLIC_SUPABASE_URL
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xyzcompany.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'public-anon-key';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export function usePerpMarket(marketId: string) {

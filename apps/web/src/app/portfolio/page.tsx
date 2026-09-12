@@ -20,7 +20,7 @@ export default function PortfolioPage() {
       setCancelingId(orderId);
       const signature = await signMessageAsync({ message: `Cancel Order: ${orderId}` });
       
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${backendUrl}/api/orders/${orderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +46,8 @@ export default function PortfolioPage() {
     queryKey: ['portfolio', address],
     queryFn: async () => {
       if (!address) return null;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/portfolio/${address}`);
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${backendUrl}/api/portfolio/${address}`);
       if (!res.ok) throw new Error('Failed to fetch portfolio');
       return res.json();
     },

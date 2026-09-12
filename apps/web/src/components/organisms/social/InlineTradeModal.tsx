@@ -27,8 +27,8 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
 
   const amountToSpend = parseUnits(amountStr || '0', 6);
   const inputNum = Number(amountStr || '0');
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-  const chainIdEnv = process.env.NEXT_PUBLIC_ROBINHOOD_CHAIN_ID || '46630';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+  const chainIdEnv = process.env.NEXT_PUBLIC_ROBINHOOD_CHAIN_ID;
 
   // Read USDG Balance
   const { data: balanceData } = useReadContract({

@@ -35,7 +35,7 @@ export function FollowButton({
     if (onFollowChange) onFollowChange(nextState);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
       const endpoint = `${backendUrl}/api/profiles/follow`;
       const method = nextState ? 'POST' : 'DELETE';
 

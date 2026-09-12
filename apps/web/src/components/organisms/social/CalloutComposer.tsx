@@ -30,8 +30,8 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
     setIsSubmitting(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-      const network = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+      const network = process.env.NEXT_PUBLIC_NETWORK;
 
       const res = await fetch(`${backendUrl}/api/callouts`, {
         method: 'POST',

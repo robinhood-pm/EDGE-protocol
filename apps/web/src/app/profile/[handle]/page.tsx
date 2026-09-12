@@ -25,8 +25,8 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!handle) return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    const network = process.env.NEXT_PUBLIC_NETWORK;
 
     setIsLoading(true);
 

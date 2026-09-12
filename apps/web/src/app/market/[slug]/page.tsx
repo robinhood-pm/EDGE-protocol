@@ -17,8 +17,8 @@ import { toast } from 'react-hot-toast';
 import { FloatingTransactions } from '@/components/organisms/FloatingTransactions';
 
 // Setup Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function MarketPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -45,7 +45,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
   const { data: tradesData, refetch: refetchTrades } = useQuery({
     queryKey: ['trades', marketId, chartRange],
     queryFn: async () => {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${backendUrl}/api/markets/${marketId}/trades?range=${chartRange}`);
       if (!res.ok) throw new Error('Failed to fetch trades');
       return res.json();
@@ -113,7 +113,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
       const message = `Cancel Order ${orderId}`;
       const signature = await signMessageAsync({ message });
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${backendUrl}/api/orders/${orderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -145,7 +145,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
     queryKey: ['portfolio', address, marketId],
     queryFn: async () => {
       if (!address) return null;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${apiUrl}/api/portfolio/${address}`);
       const json = await res.json();
       return json.positions?.find((p: any) => p.marketId === marketId) || null;

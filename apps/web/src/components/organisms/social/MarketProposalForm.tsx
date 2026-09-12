@@ -22,7 +22,7 @@ export function MarketProposalForm({ isOpen, onClose }: MarketProposalFormProps)
   const [category, setCategory] = useState('Crypto');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!isOpen) return null;
 

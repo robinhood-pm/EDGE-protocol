@@ -23,7 +23,7 @@ export function TradePanel({ market }: TradePanelProps) {
   const [selectedOutcome, setSelectedOutcome] = useState<0 | 1>(1); // 1 = YES/UP, 0 = NO/DOWN
   const amountToSpend = parseUnits(amountStr || '0', 6);
   const inputNum = Number(amountStr || '0');
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
   
   // Fetch Orderbook
   const { data: orderbookData } = useQuery({

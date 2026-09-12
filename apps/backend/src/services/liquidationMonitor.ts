@@ -71,7 +71,9 @@ export const runLiquidationCheck = async () => {
                             const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY, provider);
                             const liquidationEngine = new ethers.Contract(process.env.LIQUIDATION_ENGINE_ADDRESS, LIQUIDATION_ENGINE_ABI, relayer);
 
-                            const tx = await liquidationEngine.liquidatePosition(marketId, pos.trader);
+                            const numericalMarketId = BigInt(ethers.id(marketId));
+                            const liqNonce = await provider.getTransactionCount(relayer.address, 'pending');
+                            const tx = await liquidationEngine.liquidatePosition(numericalMarketId, pos.trader, { nonce: liqNonce });
                             const receipt = await tx.wait();
                             console.log(`[Liquidation Monitor] ⛓️ On-chain liquidation successful: ${receipt.hash}`);
 
