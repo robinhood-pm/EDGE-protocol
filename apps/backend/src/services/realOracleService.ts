@@ -1,7 +1,7 @@
 import { supabase } from '../utils/supabase';
 
 const NETWORK = 'testnet';
-const INTERVAL_MS = 5000; // Update real oracle index every 5 seconds
+const INTERVAL_MS = 10000; // Update real oracle index every 10 seconds to avoid RPC/rate limit overload
 
 // City coordinates for Open-Meteo Weather API
 const WEATHER_LOCATIONS: Record<string, { lat: number; lng: number; type: 'rain' | 'temp' | 'wind'; threshold: number }> = {
@@ -16,18 +16,35 @@ const WEATHER_LOCATIONS: Record<string, { lat: number; lng: number; type: 'rain'
 };
 
 /**
- * Fetches real crypto price from Binance Public API
+ * Fetches real crypto price using Coinbase API (primary, ISP-unblocked) or Binance API (fallback).
  */
 async function fetchRealCryptoPrice(symbol: string): Promise<number | null> {
+    // 1. Primary: Coinbase Public API (Global & ISP unblocked)
+    try {
+        const cbSymbol = symbol.replace('USDT', '-USD');
+        const res = await fetch(`https://api.coinbase.com/v2/prices/${cbSymbol}/spot`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data?.data?.amount) {
+                return parseFloat(data.data.amount);
+            }
+        }
+    } catch {
+        // Silently proceed to fallback
+    }
+
+    // 2. Fallback: Binance Public API
     try {
         const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-        if (!res.ok) return null;
-        const data = await res.json();
-        return parseFloat(data.price);
-    } catch (e) {
-        console.error(`[Real Oracle] Failed to fetch Binance price for ${symbol}:`, e);
-        return null;
+        if (res.ok) {
+            const data = await res.json();
+            return parseFloat(data.price);
+        }
+    } catch {
+        // Silently catch ISP block / TLS certificate error
     }
+
+    return null;
 }
 
 /**
@@ -44,8 +61,7 @@ async function fetchRealWeatherData(lat: number, lng: number): Promise<{ temp: n
             rain: data.current?.rain || 0,
             wind: data.current?.wind_speed_10m || 10
         };
-    } catch (e) {
-        console.error(`[Real Oracle] Failed to fetch Open-Meteo data:`, e);
+    } catch {
         return null;
     }
 }
@@ -59,11 +75,9 @@ function computeWeatherProbability(marketId: string, weather: { temp: number; ra
 
     let prob = 0.50;
     if (loc.type === 'temp') {
-        // Higher temp closer to threshold increases probability
         const ratio = weather.temp / loc.threshold;
         prob = Math.min(0.95, Math.max(0.05, ratio * 0.5));
     } else if (loc.type === 'rain') {
-        // Rain amount ratio
         prob = weather.rain > 0 ? Math.min(0.90, 0.30 + weather.rain * 0.1) : 0.20;
     } else if (loc.type === 'wind') {
         const ratio = weather.wind / loc.threshold;
@@ -75,10 +89,10 @@ function computeWeatherProbability(marketId: string, weather: { temp: number; ra
 
 /**
  * Starts the Real Testnet Oracle Feed Engine.
- * Fetches real prices from Binance API & Open-Meteo API and updates index prices in Supabase.
+ * Fetches real prices from Coinbase/Binance API & Open-Meteo API and updates index prices in Supabase.
  */
 export const startRealOracleFeedService = async () => {
-    console.log(`📡 [Real Testnet Oracle] Started live index feed using Binance & Open-Meteo APIs.`);
+    console.log(`📡 [Real Testnet Oracle] Started live index feed using Coinbase/Binance & Open-Meteo APIs.`);
 
     setInterval(async () => {
         try {
@@ -116,7 +130,7 @@ export const startRealOracleFeedService = async () => {
                     }
                 }
 
-                // 3. Fallback for macro/other markets (calculate from prediction market orderbook or mid)
+                // 3. Fallback for macro/other markets (calculate from recorded index price)
                 if (!realPrice) {
                     const { data: lastIdx } = await supabase
                         .from('perp_index_prices')

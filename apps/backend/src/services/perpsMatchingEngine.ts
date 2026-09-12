@@ -202,10 +202,18 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                     });
                 }
             } catch (e: any) {
-                console.error(`[Perp Matching Engine] ❌ On-chain settlement failed for ${order.id}:`, e.message);
-                console.log(`[Perp Matching Engine] Canceling order ${order.id} due to failure...`);
-                await supabase.from('perp_orders').update({ status: 'CANCELED' }).eq('id', order.id);
+                const errMsg = e.message || String(e);
+                const isRateLimit = errMsg.includes('429') || errMsg.includes('Too Many Requests') || errMsg.includes('exceeded maximum retry limit') || errMsg.includes('SERVER_ERROR');
+                if (isRateLimit) {
+                    console.warn(`[Perp Matching Engine] ⏳ RPC rate-limited (429/599). Retrying order ${order.id} in next cycle.`);
+                } else {
+                    console.error(`[Perp Matching Engine] ❌ On-chain settlement failed for ${order.id}:`, errMsg);
+                    console.log(`[Perp Matching Engine] Canceling order ${order.id} due to failure...`);
+                    await supabase.from('perp_orders').update({ status: 'CANCELED' }).eq('id', order.id);
+                }
             }
+            // Small throttle delay between order submissions to prevent Alchemy rate limit bursts
+            await new Promise((r) => setTimeout(r, 300));
         }
     } catch (e) {
         console.error(`[Perp Matching Engine] Error:`, e);

@@ -2,7 +2,7 @@ import { matchPerpOrdersAsync } from './perpsMatchingEngine';
 import { supabase } from '../utils/supabase';
 
 const NETWORK = 'testnet';
-const INTERVAL_MS = 3000;
+const INTERVAL_MS = 6000;
 
 export const startMatchingEngineRunner = () => {
     console.log(`🚀 [Matching Engine Service] Started auto-matching loop.`);
@@ -16,6 +16,7 @@ export const startMatchingEngineRunner = () => {
 
             for (const marketId of markets) {
                 await matchPerpOrdersAsync(marketId, NETWORK);
+                await new Promise((r) => setTimeout(r, 200));
             }
         } catch (e) {
             console.error(`[Matching Engine Service] Loop error:`, e);
