@@ -22,15 +22,23 @@ CREATE TABLE IF NOT EXISTS public.markets (
     PRIMARY KEY (id, network)
 );
 
--- 2. Users Table
--- Stores user profiles and static metrics
+-- 2. Users Table (Unified Social & Trading Layer)
+-- Stores user profiles, social metadata, and trading metrics
 CREATE TABLE IF NOT EXISTS public.users (
-    wallet_address TEXT,
-    network TEXT, -- 'TESTNET' or 'MAINNET'
+    id UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    wallet_address TEXT NOT NULL,
+    network TEXT NOT NULL DEFAULT 'TESTNET', -- 'TESTNET' or 'MAINNET'
     username TEXT,
+    handle TEXT,
+    display_name TEXT,
+    bio TEXT,
+    avatar_url TEXT,
+    x_handle TEXT,
+    is_verified BOOLEAN DEFAULT FALSE,
     total_trades INTEGER DEFAULT 0,
     historical_pnl_usdg NUMERIC DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (wallet_address, network)
 );

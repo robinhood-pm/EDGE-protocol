@@ -1,29 +1,48 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/organisms/Header';
 import { Badge } from '@/components/atoms/Badge';
 import { LeaderboardEntry } from '@/types/social';
-import staticLeaderboard from '@/data/leaderboard.json';
-import { Trophy, Target, TrendingUp, Zap, ShieldCheck, CheckCircle2, Crown } from 'lucide-react';
+import { Trophy, CheckCircle2, Crown, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { formatCompactVolume } from '@/lib/utils';
 
 type PeriodType = '24h' | '7d' | '30d' | 'all_time';
 
 export default function LeaderboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('24h');
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const entries: LeaderboardEntry[] = (staticLeaderboard.periods as any)[selectedPeriod] || staticLeaderboard.periods['24h'];
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      setIsLoading(true);
+      try {
+        const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl = rawApiUrl ? rawApiUrl.replace(/\/$/, '') : 'http://localhost:8080';
+        const res = await fetch(`${apiUrl}/api/leaderboard?period=${selectedPeriod}&network=testnet`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.leaderboard)) {
+            setEntries(data.leaderboard);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching live leaderboard:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchLeaderboard();
+  }, [selectedPeriod]);
 
   const top1 = entries[0];
   const top2 = entries[1];
   const top3 = entries[2];
 
   const formatVolume = (volStr: string) => {
-    const vol = Number(volStr || 0);
-    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
-    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}K`;
-    return `$${vol}`;
+    return formatCompactVolume(volStr);
   };
 
   return (
@@ -37,9 +56,6 @@ export default function LeaderboardPage() {
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="border-amber-400/30 text-amber-400 text-[10px]">
                 PROPHETS & CALLERS RANKING
-              </Badge>
-              <Badge variant="outline" className="text-white/40 text-[10px]">
-                TESTNET
               </Badge>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2">

@@ -25,7 +25,7 @@ const TYPES = {
     ]
 };
 
-const TICK_INTERVAL_MS = 2500;
+const TICK_INTERVAL_MS = 10 * 60 * 1000;
 
 function getRandomInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;

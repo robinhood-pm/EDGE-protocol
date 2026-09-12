@@ -4,17 +4,13 @@ import { Link2, Star } from 'lucide-react';
 import { Market } from '@/types';
 import { Badge } from '@/components/atoms/Badge';
 import { Button } from '@/components/atoms/Button';
+import { formatCompactVolume } from '@/lib/utils';
 
 interface MarketCardProps {
   market: Market;
 }
 
 export function MarketCard({ market }: MarketCardProps) {
-  const formatVolume = (vol: number) => {
-    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
-    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}K`;
-    return `$${vol}`;
-  };
 
   return (
     <Link href={`/market/${market.slug || market.id}`} className="block group h-full focus:outline-none focus:ring-1 focus:ring-white/20 rounded-2xl">
@@ -96,7 +92,7 @@ export function MarketCard({ market }: MarketCardProps) {
               {/* Placeholder for future badges */}
             </div>
             <div className="flex items-center gap-3">
-              <span>{formatVolume(market.totalVolume)} Vol</span>
+              <span>{formatCompactVolume(market.totalVolume)} Vol</span>
               {market.status === 'Live' && (
                 <span className="flex items-center gap-1 text-red-500">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />

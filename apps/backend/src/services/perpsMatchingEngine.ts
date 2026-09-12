@@ -15,7 +15,7 @@ const PERP_EXCHANGE_ABI = [
 export const matchPerpOrdersAsync = async (perpMarketId: string, network: string) => {
     try {
         console.log(`[Perp Matching Engine] Running for market ${perpMarketId} on ${network}`);
-        
+
         // Fetch pending perp orders
         const { data: orders, error } = await supabase
             .from('perp_orders')
@@ -118,7 +118,7 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                 }, null, 2));
                 console.log(`[Perp Matching Engine] DOMAIN:`, JSON.stringify(DOMAIN, null, 2));
                 console.log(`[Perp Matching Engine] Relayer address (signer): ${relayer.address}`);
-                
+
                 const ammSignature = await relayer.signTypedData(DOMAIN, TYPES, ammOrderTuple);
                 console.log(`[Perp Matching Engine] AMM Signature: ${ammSignature}`);
 
@@ -167,9 +167,9 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
 
                 // 5. Update Database - Order Status
                 console.log(`[Perp Matching Engine] Updating order ${order.id} status to FILLED...`);
-                await supabase.from('perp_orders').update({ 
-                    status: 'FILLED', 
-                    filled_amount: order.size 
+                await supabase.from('perp_orders').update({
+                    status: 'FILLED',
+                    filled_amount: order.size
                 }).eq('id', order.id);
 
                 console.log(`[Perp Matching Engine] Recording trade in perp_fills...`);
@@ -183,7 +183,7 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                     size: order.size,
                     price: order.price
                 });
-                
+
                 // 5.5 Update Mark Price!
                 console.log(`[Perp Matching Engine] 📈 Updating Mark Price for ${perpMarketId} to $${order.price}`);
                 await supabase.from('perp_mark_prices').insert({
@@ -206,7 +206,7 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                     const pos = existingPositions[0];
                     let newSize = Number(pos.size);
                     let newMargin = Number(pos.margin);
-                    
+
                     if (pos.side === order.side) {
                         newSize += Number(order.size);
                         newMargin += Number(order.margin);
@@ -236,8 +236,12 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
             } catch (e: any) {
                 const errMsg = e.message || String(e);
                 const isRateLimit = errMsg.includes('429') || errMsg.includes('Too Many Requests') || errMsg.includes('exceeded maximum retry limit') || errMsg.includes('SERVER_ERROR');
+                const isInsufficientFunds = errMsg.includes('insufficient funds') || errMsg.includes('INSUFFICIENT_FUNDS');
+
                 if (isRateLimit) {
                     console.warn(`[Perp Matching Engine] ⏳ RPC rate-limited (429/599). Retrying order ${order.id} in next cycle.`);
+                } else if (isInsufficientFunds) {
+                    console.warn(`[Perp Matching Engine] ⛽ Relayer has insufficient gas funds. Order ${order.id} will remain OPEN until relayer is funded.`);
                 } else if (errMsg.includes('fully filled')) {
                     console.log(`[Perp Matching Engine] Order ${order.id} is already filled on-chain. Marking FILLED.`);
                     await supabase.from('perp_orders').update({ status: 'FILLED', filled_amount: order.size }).eq('id', order.id);

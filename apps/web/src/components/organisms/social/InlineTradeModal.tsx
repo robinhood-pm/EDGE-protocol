@@ -164,7 +164,7 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             calloutId: callout.id,
-            creatorId: callout.creator.handle,
+            creatorId: creatorHandle,
             traderAddress: address,
             marketId: marketIdStr,
             volume: inputNum,
@@ -175,7 +175,7 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
         console.warn('Attribution recording warning:', attrErr);
       }
 
-      toast.success(`Bought ${estimatedShares} ${selectedSide} shares directly from @${callout.creator.handle}'s callout!`);
+      toast.success(`Bought ${estimatedShares} ${selectedSide} shares directly from @${creatorHandle}'s callout!`);
       logActivity('INLINE_CALLOUT_TRADE', { calloutId: callout.id, side: selectedSide, amount: amountStr }, address);
       onClose();
     } catch (e: any) {
@@ -189,6 +189,8 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
       setIsSigning(false);
     }
   };
+
+  const creatorHandle = callout?.creator?.handle || 'caller';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -206,7 +208,7 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
             <Badge variant="outline" className="border-yes/30 text-yes text-[10px]">
               INLINE CALLOUT TRADE
             </Badge>
-            <span className="text-xs text-white/40 font-mono">@{callout.creator.handle}</span>
+            <span className="text-xs text-white/40 font-mono">@{creatorHandle}</span>
           </div>
           <h3 className="font-bold text-base text-white leading-snug">
             {callout.market?.title || callout.headline}
@@ -285,7 +287,7 @@ export function InlineTradeModal({ callout, initialSide, isOpen, onClose }: Inli
           </div>
           <div className="flex justify-between text-white/60">
             <span>Attributed Creator:</span>
-            <span className="font-bold text-yes">@{callout.creator.handle}</span>
+            <span className="font-bold text-yes">@{creatorHandle}</span>
           </div>
         </div>
 

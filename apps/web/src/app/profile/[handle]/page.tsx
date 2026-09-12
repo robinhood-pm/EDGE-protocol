@@ -7,10 +7,9 @@ import { ProfileHeader } from '@/components/organisms/social/ProfileHeader';
 import { ProfileStats } from '@/components/organisms/social/ProfileStats';
 import { ProfileTabs, ProfileTabType } from '@/components/organisms/social/ProfileTabs';
 import { Profile, Callout } from '@/types/social';
-import staticCreators from '@/data/creators.json';
-import staticCallouts from '@/data/callouts.json';
 import { Loader2, MessageSquareOff, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/atoms/Badge';
+import { formatCompactVolume } from '@/lib/utils';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -25,40 +24,35 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!handle) return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-    const network = process.env.NEXT_PUBLIC_NETWORK;
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = rawApiUrl ? rawApiUrl : '';
+    const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
+    const network = rawNetwork ? rawNetwork : 'testnet';
 
     setIsLoading(true);
 
-    fetch(`${backendUrl}/api/profiles/${handle}?network=${network}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Profile API offline');
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && data.profile) {
-          setProfile(data.profile);
+    // Fetch profile and user callouts concurrently
+    Promise.all([
+      fetch(`${backendUrl}/api/profiles/${handle}?network=${network}`).then((r) => r.ok ? r.json() : null),
+      fetch(`${backendUrl}/api/callouts?creatorId=${handle}&network=${network}`).then((r) => r.ok ? r.json() : null),
+    ])
+      .then(([profData, calloutsData]) => {
+        if (profData && profData.success && profData.profile) {
+          setProfile(profData.profile);
         } else {
-          throw new Error('Invalid profile payload');
-        }
-      })
-      .catch(() => {
-        // Fallback to static JSON data if API is offline
-        const matched = (staticCreators as any[]).find(
-          (c) => c.handle.toLowerCase() === handle || c.id.toLowerCase() === handle
-        );
-        if (matched) {
-          setProfile(matched as Profile);
-        } else {
-          // Default to first static creator as demonstration
-          setProfile(staticCreators[0] as Profile);
+          setProfile(null);
         }
 
-        // Filter callouts for creator
-        const filteredCallouts = (staticCallouts as any[]).filter(
-          (c) => c.creator.handle.toLowerCase() === handle
-        );
-        setCallouts(filteredCallouts.length > 0 ? (filteredCallouts as Callout[]) : (staticCallouts as Callout[]));
+        if (calloutsData && calloutsData.success && Array.isArray(calloutsData.callouts)) {
+          setCallouts(calloutsData.callouts);
+        } else {
+          setCallouts([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load profile data:', err);
+        setProfile(null);
+        setCallouts([]);
       })
       .finally(() => setIsLoading(false));
   }, [handle]);
@@ -152,7 +146,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <div className="text-xs text-white/40">Market Vol</div>
-                        <div className="text-xs font-bold text-white">${(c.market.totalVolume / 1000).toFixed(0)}K</div>
+                        <div className="text-xs font-bold text-white">{formatCompactVolume(c.market.totalVolume)}</div>
                       </div>
                     </div>
                   </div>

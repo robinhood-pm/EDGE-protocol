@@ -9,7 +9,6 @@ import { TopCallers } from '@/components/organisms/social/TopCallers';
 import { TrendingCallouts } from '@/components/organisms/social/TrendingCallouts';
 import { CounterCallModal } from '@/components/organisms/social/CounterCallModal';
 import { Callout } from '@/types/social';
-import staticCallouts from '@/data/callouts.json';
 import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/Badge';
 import { Plus, Flame, Users, Filter, Sparkles } from 'lucide-react';
@@ -25,35 +24,79 @@ export default function SocialFeedPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-    const network = process.env.NEXT_PUBLIC_NETWORK;
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = rawApiUrl ? rawApiUrl : '';
+    const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
+    const network = rawNetwork ? rawNetwork : 'testnet';
+
+    const categoryParam = activeCategory !== 'Trending' && activeCategory !== 'Live' && activeCategory !== 'New'
+      ? `&category=${encodeURIComponent(activeCategory)}`
+      : '';
+
     const endpoint =
       activeTab === 'following'
-        ? `${backendUrl}/api/feed/following?userId=current-user&network=${network}`
-        : `${backendUrl}/api/feed/for-you?category=${activeCategory}&network=${network}`;
+        ? `${backendUrl}/api/feed/following?network=${network}`
+        : `${backendUrl}/api/callouts?network=${network}${categoryParam}`;
 
     fetch(endpoint)
       .then((res) => {
-        if (!res.ok) throw new Error('API offline');
+        if (!res.ok) throw new Error('API fetch error');
         return res.json();
       })
       .then((data) => {
-        if (data.success && Array.isArray(data.callouts) && data.callouts.length > 0) {
+        if (data.success && Array.isArray(data.callouts)) {
           setCallouts(data.callouts);
         } else {
-          throw new Error('Empty feed');
+          setCallouts([]);
         }
       })
-      .catch(() => {
-        // Render from static callouts data if API is offline
-        let list = staticCallouts as unknown as Callout[];
-        if (activeCategory !== 'Trending' && activeCategory !== 'Live' && activeCategory !== 'New') {
-          list = list.filter((c) => c.category.toLowerCase() === activeCategory.toLowerCase());
-        }
-        setCallouts(list);
+      .catch((err) => {
+        console.error('Failed to fetch real callouts:', err);
+        setCallouts([]);
       })
       .finally(() => setIsLoading(false));
   }, [activeTab, activeCategory]);
+
+
+  const [hasSidebarData, setHasSidebarData] = useState<boolean>(true);
+
+  useEffect(() => {
+    async function checkSidebar() {
+      try {
+        const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const backendUrl = rawApiUrl ? rawApiUrl : '';
+        const rawNetwork = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+
+        const [leaderboardRes, calloutsRes] = await Promise.allSettled([
+          fetch(`${backendUrl}/api/leaderboard?period=all_time&network=${rawNetwork}`),
+          fetch(`${backendUrl}/api/callouts?network=${rawNetwork}&limit=3`),
+        ]);
+
+        let hasCallers = false;
+        let hasCallouts = false;
+
+        if (leaderboardRes.status === 'fulfilled' && leaderboardRes.value.ok) {
+          const lbData = await leaderboardRes.value.json();
+          if (lbData.success && Array.isArray(lbData.leaderboard) && lbData.leaderboard.length > 0) {
+            hasCallers = true;
+          }
+        }
+
+        if (calloutsRes.status === 'fulfilled' && calloutsRes.value.ok) {
+          const coData = await calloutsRes.value.json();
+          if (coData.success && Array.isArray(coData.callouts) && coData.callouts.length > 0) {
+            hasCallouts = true;
+          }
+        }
+
+        setHasSidebarData(hasCallers || hasCallouts);
+      } catch (err) {
+        setHasSidebarData(false);
+      }
+    }
+
+    checkSidebar();
+  }, []);
 
   // Apply sub-filter
   const filteredCallouts = callouts.filter((c) => {
@@ -169,10 +212,12 @@ export default function SocialFeedPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="w-full lg:w-80 space-y-6 flex-shrink-0">
-            <TopCallers />
-            <TrendingCallouts />
-          </div>
+          {hasSidebarData && (
+            <div className="w-full lg:w-80 space-y-6 flex-shrink-0">
+              <TopCallers />
+              <TrendingCallouts />
+            </div>
+          )}
         </div>
       </main>
 

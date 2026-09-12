@@ -17,7 +17,7 @@ export async function getProfileByHandle(
 ): Promise<ProfileDTO | null> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .ilike('handle', handle)
     .single();
@@ -43,27 +43,57 @@ export async function getProfileByWallet(
   walletAddress: string
 ): Promise<ProfileDTO | null> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('wallet_address', walletAddress.toLowerCase())
-    .single();
+  const normalizedWallet = walletAddress.toLowerCase();
 
-  if (error || !data) {
-    return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('wallet_address', normalizedWallet)
+    .maybeSingle();
+
+  if (data) {
+    return {
+      id: data.id,
+      walletAddress: data.wallet_address,
+      handle: data.handle,
+      displayName: data.display_name,
+      bio: data.bio || null,
+      avatarUrl: data.avatar_url,
+      xHandle: data.x_handle || null,
+      isVerified: Boolean(data.is_verified),
+      createdAt: new Date(data.created_at),
+    };
   }
 
-  return {
-    id: data.id,
-    walletAddress: data.wallet_address,
-    handle: data.handle,
-    displayName: data.display_name,
-    bio: data.bio || null,
-    avatarUrl: data.avatar_url,
-    xHandle: data.x_handle || null,
-    isVerified: Boolean(data.is_verified),
-    createdAt: new Date(data.created_at),
-  };
+  // Fallback to users table if profiles record doesn't exist yet
+  try {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('wallet_address', normalizedWallet)
+      .limit(1)
+      .maybeSingle();
+
+    if (userData) {
+      const shortId = normalizedWallet.slice(2, 8);
+      const handle = userData.handle || userData.username || `user${shortId}`;
+      return {
+        id: userData.wallet_address,
+        walletAddress: userData.wallet_address,
+        handle,
+        displayName: userData.display_name || userData.username || handle,
+        bio: userData.bio || null,
+        avatarUrl: userData.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${handle}`,
+        xHandle: userData.x_handle || null,
+        isVerified: false,
+        createdAt: new Date(userData.created_at || Date.now()),
+      };
+    }
+  } catch (err) {
+    // Ignore users table query failure
+  }
+
+  return null;
 }
 
 export async function createOrUpdateProfile(data: {
@@ -79,7 +109,9 @@ export async function createOrUpdateProfile(data: {
 
   const payload = {
     wallet_address: normalizedWallet,
+    network: (process.env.NETWORK || 'testnet').toLowerCase(),
     handle: data.handle,
+    username: data.handle,
     display_name: data.displayName,
     bio: data.bio || null,
     avatar_url: data.avatarUrl || `https://api.dicebear.com/9.x/thumbs/svg?seed=${data.handle}`,
@@ -88,13 +120,32 @@ export async function createOrUpdateProfile(data: {
   };
 
   const { data: profile, error } = await supabase
-    .from('profiles')
-    .upsert(payload, { onConflict: 'wallet_address' })
+    .from('users')
+    .upsert(payload, { onConflict: 'wallet_address, network' })
     .select('*')
     .single();
 
   if (error || !profile) {
     throw new Error(`Failed to create or update profile: ${error?.message || 'Unknown error'}`);
+  }
+
+  // Synchronize users table as well if present
+  try {
+    const network = (process.env.NETWORK || 'testnet').toLowerCase();
+    await supabase.from('users').upsert({
+      wallet_address: normalizedWallet,
+      network,
+      username: data.handle,
+      handle: data.handle,
+      display_name: data.displayName,
+      bio: payload.bio,
+      avatar_url: payload.avatar_url,
+      x_handle: payload.x_handle,
+      last_active: payload.updated_at,
+    }, { onConflict: 'wallet_address, network' });
+  } catch (userSyncErr) {
+    // Non-blocking warning if users table structure is different
+    console.warn('Sync to users table skipped/warn:', userSyncErr);
   }
 
   return {

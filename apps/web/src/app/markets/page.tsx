@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/organisms/Header';
 import { CategoryTabs } from '@/components/organisms/CategoryTabs';
 import { MarketCard } from '@/components/molecules/MarketCard';
@@ -13,6 +13,7 @@ import { TopCallers } from '@/components/organisms/social/TopCallers';
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("Trending");
+  const [hasSidebarData, setHasSidebarData] = useState<boolean>(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['markets', activeCategory],
@@ -30,6 +31,44 @@ export default function Home() {
   const markets = (data?.markets as Market[]) || [];
   const liveCount = data?.liveCount || 0;
 
+  useEffect(() => {
+    async function checkSidebar() {
+      try {
+        const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const backendUrl = rawApiUrl ? rawApiUrl : '';
+        const rawNetwork = process.env.NEXT_PUBLIC_NETWORK || 'testnet';
+
+        const [leaderboardRes, calloutsRes] = await Promise.allSettled([
+          fetch(`${backendUrl}/api/leaderboard?period=all_time&network=${rawNetwork}`),
+          fetch(`${backendUrl}/api/callouts?network=${rawNetwork}&limit=3`),
+        ]);
+
+        let hasCallers = false;
+        let hasCallouts = false;
+
+        if (leaderboardRes.status === 'fulfilled' && leaderboardRes.value.ok) {
+          const lbData = await leaderboardRes.value.json();
+          if (lbData.success && Array.isArray(lbData.leaderboard) && lbData.leaderboard.length > 0) {
+            hasCallers = true;
+          }
+        }
+
+        if (calloutsRes.status === 'fulfilled' && calloutsRes.value.ok) {
+          const coData = await calloutsRes.value.json();
+          if (coData.success && Array.isArray(coData.callouts) && coData.callouts.length > 0) {
+            hasCallouts = true;
+          }
+        }
+
+        setHasSidebarData(hasCallers || hasCallouts);
+      } catch (err) {
+        setHasSidebarData(false);
+      }
+    }
+
+    checkSidebar();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#070709] text-white">
       <Header />
@@ -40,7 +79,7 @@ export default function Home() {
           {/* Main Markets Area */}
           <div className="flex-1">
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className={`grid gap-4 ${hasSidebarData ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4'}`}>
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="rounded-xl border border-white/10 bg-white/5 h-[320px] overflow-hidden flex flex-col relative animate-pulse">
                     {/* Header/Image skeleton */}
@@ -73,7 +112,7 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className={`grid gap-4 ${hasSidebarData ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4'}`}>
                 {markets.map((market) => (
                   <MarketCard key={market.id} market={market} />
                 ))}
@@ -82,10 +121,12 @@ export default function Home() {
           </div>
 
           {/* Social Prediction Sidebar */}
-          <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6">
-            <TopCallers />
-            <TrendingCallouts />
-          </div>
+          {hasSidebarData && (
+            <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6">
+              <TopCallers />
+              <TrendingCallouts />
+            </div>
+          )}
         </div>
       </main>
     </div>

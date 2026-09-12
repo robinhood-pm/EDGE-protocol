@@ -3,18 +3,14 @@
 import React from 'react';
 import { ProfileStats as ProfileStatsType } from '@/types/social';
 import { Trophy, Target, Zap, Flame, TrendingUp } from 'lucide-react';
+import { formatCompactVolume } from '@/lib/utils';
 
 interface ProfileStatsProps {
   stats: ProfileStatsType;
 }
 
 export function ProfileStats({ stats }: ProfileStatsProps) {
-  const formatVolume = (volStr: string) => {
-    const vol = Number(volStr || 0);
-    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
-    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}K`;
-    return `$${vol}`;
-  };
+  const volumeStr = formatCompactVolume(stats.volumeAttributed);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
@@ -77,7 +73,7 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
           <TrendingUp className="w-4 h-4 text-purple-400" />
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-black text-purple-300 tracking-tight">{formatVolume(stats.volumeAttributed)}</span>
+          <span className="text-2xl font-black text-purple-300 tracking-tight">{volumeStr}</span>
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-500" />
       </div>

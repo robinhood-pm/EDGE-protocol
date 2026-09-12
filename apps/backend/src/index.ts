@@ -58,6 +58,8 @@ import { startFundingEngine } from './services/fundingEngine';
 import { startLiquidationMonitor } from './services/liquidationMonitor';
 import { startPerpSettlementMonitor } from './services/perpSettlement';
 import { startTradingBotService } from './services/tradingBotService';
+import { startSpotTradingBotService } from './services/spotTradingBotService';
+import { startCalloutBotService } from './services/calloutBotService';
 import { startMatchingEngineRunner } from './services/matchingEngineRunner';
 import { startRealOracleFeedService } from './services/realOracleService';
 
@@ -78,6 +80,8 @@ app.listen(PORT, () => {
     console.log(`📡 Starting Real Testnet Live Oracle Data Feed & Matching Workers...`);
     startRealOracleFeedService();
     startMatchingEngineRunner();
-    startTradingBotService();
+    startTradingBotService();     // Perpetual Futures Bot
+    startSpotTradingBotService(); // Spot Prediction Market Bot
+    startCalloutBotService();     // Callout Prophet Bot
   }
 });

@@ -8,7 +8,7 @@ export class LeaderboardController {
       const network = (req.query.network as string) === 'mainnet' ? 'mainnet' : 'testnet';
 
       const entries = await LeaderboardService.getLeaderboard(period, network);
-      return res.json({ network, period, entries });
+      return res.json({ success: true, network, period, leaderboard: entries, entries });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }

@@ -22,8 +22,19 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [selectedTradeSide, setSelectedTradeSide] = useState<'YES' | 'NO'>('YES');
 
+  if (!callout) return null;
+
   const isYesConviction = callout.conviction === 'YES';
   const formattedTimeAgo = formatTimeAgo(callout.createdAt);
+
+  const creator = callout.creator;
+  const metrics = callout.metrics;
+  const market = callout.market;
+  const snapshotProbability = callout.snapshot?.probabilityAtCall ?? callout.callProbability ?? 50;
+
+  const creatorHandle = creator?.handle || 'caller';
+  const creatorName = creator?.displayName || creator?.handle || 'Caller';
+  const creatorAvatar = creator?.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${callout.id}`;
 
   const handleOpenTrade = (side: 'YES' | 'NO') => {
     if (onTradeClick) {
@@ -38,16 +49,16 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
     <div className={`bg-[#070709] border border-white/10 hover:border-white/20 rounded-2xl transition-all shadow-xl backdrop-blur-xl relative group ${isCompact ? 'p-4 space-y-2' : 'p-5'}`}>
       {/* Header: Creator Info + View Count (Top Right when Compact) / Status Badge */}
       <div className="flex items-start justify-between gap-4 mb-2">
-        <Link href={`/profile/${callout.creator.handle}`} className="flex items-center gap-2.5 group/author">
+        <Link href={`/profile/${creatorHandle}`} className="flex items-center gap-2.5 group/author">
           <div className="w-9 h-9 rounded-xl bg-[#151924] border border-white/10 overflow-hidden flex-shrink-0 shadow-md">
-            <img src={callout.creator.avatarUrl} alt={callout.creator.displayName} className="w-full h-full object-cover" />
+            <img src={creatorAvatar} alt={creatorName} className="w-full h-full object-cover" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-xs text-white group-hover/author:text-yes transition-colors">
-                {callout.creator.displayName}
+                {creatorName}
               </span>
-              {callout.creator.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-yes fill-yes/20" />}
+              {creator?.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-yes fill-yes/20" />}
             </div>
             <div className="text-[11px] text-white/50 font-medium">
               {formattedTimeAgo}
@@ -58,14 +69,14 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
         {isCompact ? (
           <div className="flex items-center gap-1.5 text-white/50 text-xs font-mono bg-white/5 px-2 py-1 rounded-md border border-white/5">
             <Eye className="w-3.5 h-3.5" />
-            <span>{formatCompactNumber(callout.metrics.views)}</span>
+            <span>{formatCompactNumber(metrics?.views || 0)}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             {callout.status === 'LIVE' ? (
               <Badge variant="live">LIVE</Badge>
             ) : callout.status === 'WON' ? (
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">WON (+{callout.snapshot.probabilityAtCall} pts)</Badge>
+              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">WON (+{snapshotProbability} pts)</Badge>
             ) : callout.status === 'LOST' ? (
               <Badge variant="destructive">LOST</Badge>
             ) : (
@@ -106,15 +117,17 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
       </Link>
 
       {/* Embedded Prediction Market Card (Position & Profit) */}
-      <EmbeddedMarketCard
-        market={callout.market}
-        callProbability={callout.callProbability}
-        currentProbability={callout.currentProbability}
-        hideProbabilityBar={isCompact}
-      />
+      {market && (
+        <EmbeddedMarketCard
+          market={market}
+          callProbability={callout.callProbability || 50}
+          currentProbability={callout.currentProbability || 50}
+          hideProbabilityBar={isCompact}
+        />
+      )}
 
       {/* Inline Trade CTAs (Hidden when compact) */}
-      {!isCompact && (
+      {!isCompact && market && (
         <div className="grid grid-cols-2 gap-2 my-3">
           <Button
             variant="yes"
@@ -122,7 +135,7 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
             onClick={() => handleOpenTrade('YES')}
             className="w-full text-xs font-bold h-9"
           >
-            Trade YES {callout.market.yesProbability}%
+            Trade YES {market.yesProbability}%
           </Button>
           <Button
             variant="no"
@@ -130,18 +143,20 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
             onClick={() => handleOpenTrade('NO')}
             className="w-full text-xs font-bold h-9"
           >
-            Trade NO {callout.market.noProbability}%
+            Trade NO {market.noProbability}%
           </Button>
         </div>
       )}
 
       {/* Social Action Footer */}
-      <SocialActionBar
-        metrics={callout.metrics}
-        onCommentClick={() => (window.location.href = `/callouts/${callout.id}`)}
-        onCounterClick={onCounterClick}
-        isCompact={isCompact}
-      />
+      {metrics && (
+        <SocialActionBar
+          metrics={metrics}
+          onCommentClick={() => (window.location.href = `/callouts/${callout.id}`)}
+          onCounterClick={onCounterClick}
+          isCompact={isCompact}
+        />
+      )}
 
       <InlineTradeModal
         callout={callout}

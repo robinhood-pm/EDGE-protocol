@@ -6,8 +6,6 @@ import { Header } from '@/components/organisms/Header';
 import { CalloutCard } from '@/components/organisms/social/CalloutCard';
 import { Badge } from '@/components/atoms/Badge';
 import { Callout, Profile } from '@/types/social';
-import staticCallouts from '@/data/callouts.json';
-import staticCreators from '@/data/creators.json';
 import { Search, Users, Zap, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,30 +18,41 @@ function SearchContent() {
 
   const [matchedCallouts, setMatchedCallouts] = useState<Callout[]>([]);
   const [matchedCreators, setMatchedCreators] = useState<Profile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) {
-      setMatchedCallouts(staticCallouts as any);
-      setMatchedCreators(staticCreators as any);
-      return;
-    }
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = rawApiUrl ? rawApiUrl : '';
+    const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
+    const network = rawNetwork ? rawNetwork : 'testnet';
 
-    const filteredCalls = (staticCallouts as any).filter((c: Callout) =>
-      c.headline.toLowerCase().includes(q) ||
-      (c.thesis && c.thesis.toLowerCase().includes(q)) ||
-      c.category.toLowerCase().includes(q) ||
-      c.creator.handle.toLowerCase().includes(q)
-    );
+    setIsLoading(true);
 
-    const filteredCreators = (staticCreators as any).filter((cr: Profile) =>
-      cr.handle.toLowerCase().includes(q) ||
-      cr.displayName.toLowerCase().includes(q) ||
-      (cr.bio && cr.bio.toLowerCase().includes(q))
-    );
+    const q = query.trim();
+    const endpoint = q 
+      ? `${backendUrl}/api/search?q=${encodeURIComponent(q)}&network=${network}`
+      : `${backendUrl}/api/callouts?network=${network}`;
 
-    setMatchedCallouts(filteredCalls);
-    setMatchedCreators(filteredCreators);
+    fetch(endpoint)
+      .then((res) => {
+        if (!res.ok) throw new Error('Search failed');
+        return res.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          setMatchedCallouts(Array.isArray(data.callouts) ? data.callouts : Array.isArray(data.results?.callouts) ? data.results.callouts : []);
+          setMatchedCreators(Array.isArray(data.creators) ? data.creators : Array.isArray(data.results?.creators) ? data.results.creators : []);
+        } else {
+          setMatchedCallouts([]);
+          setMatchedCreators([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Search API error:', err);
+        setMatchedCallouts([]);
+        setMatchedCreators([]);
+      })
+      .finally(() => setIsLoading(false));
   }, [query]);
 
   return (
@@ -107,59 +116,80 @@ function SearchContent() {
 
         {/* Results Section */}
         <div className="space-y-8">
-          {/* Creators Match Section */}
-          {(activeTab === 'all' || activeTab === 'creators') && matchedCreators.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-bold text-sm text-white/70 uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-yes" />
-                <span>Creators ({matchedCreators.length})</span>
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {matchedCreators.map((creator) => (
-                  <Link
-                    key={creator.id}
-                    href={`/profile/${creator.handle}`}
-                    className="bg-[#070709] border border-white/10 hover:border-white/20 rounded-xl p-4 flex items-center gap-3 transition-all group"
-                  >
-                    <img src={creator.avatarUrl} alt={creator.handle} className="w-10 h-10 rounded-full border border-white/10" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-xs text-white truncate group-hover:text-yes transition-colors">
-                          {creator.displayName}
-                        </span>
-                        {creator.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-yes fill-yes/20 flex-shrink-0" />}
-                      </div>
-                      <span className="text-[11px] text-white/40 font-mono block">@{creator.handle}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Callouts Match Section */}
-          {(activeTab === 'all' || activeTab === 'callouts') && matchedCallouts.length > 0 && (
+          {isLoading ? (
             <div className="space-y-4">
-              <h3 className="font-bold text-sm text-white/70 uppercase tracking-wider flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yes" />
-                <span>Callouts ({matchedCallouts.length})</span>
-              </h3>
-
-              <div className="space-y-4">
-                {matchedCallouts.map((callout) => (
-                  <CalloutCard key={callout.id} callout={callout} />
-                ))}
-              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-[#070709] border border-white/10 rounded-2xl p-6 space-y-4 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 w-32 bg-white/10 rounded-md" />
+                      <div className="h-3 w-20 bg-white/5 rounded-md" />
+                    </div>
+                  </div>
+                  <div className="h-5 w-3/4 bg-white/10 rounded-md" />
+                  <div className="h-4 w-full bg-white/5 rounded-md" />
+                  <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5" />
+                </div>
+              ))}
             </div>
-          )}
+          ) : (
+            <>
+              {/* Creators Match Section */}
+              {(activeTab === 'all' || activeTab === 'creators') && matchedCreators.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-bold text-sm text-white/70 uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-4 h-4 text-yes" />
+                    <span>Creators ({matchedCreators.length})</span>
+                  </h3>
 
-          {matchedCallouts.length === 0 && matchedCreators.length === 0 && (
-            <div className="text-center py-16 bg-[#070709] border border-white/10 rounded-2xl p-8 space-y-2">
-              <Search className="w-8 h-8 text-white/20 mx-auto" />
-              <h4 className="font-bold text-base text-white">No matching results</h4>
-              <p className="text-xs text-white/40">Try searching for keywords like "Bitcoin", "Fed", "CryptoWhale", or "Macro".</p>
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {matchedCreators.map((creator) => (
+                      <Link
+                        key={creator.id}
+                        href={`/profile/${creator.handle}`}
+                        className="bg-[#070709] border border-white/10 hover:border-white/20 rounded-xl p-4 flex items-center gap-3 transition-all group"
+                      >
+                        <img src={creator.avatarUrl} alt={creator.handle} className="w-10 h-10 rounded-full border border-white/10" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-xs text-white truncate group-hover:text-yes transition-colors">
+                              {creator.displayName}
+                            </span>
+                            {creator.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-yes fill-yes/20 flex-shrink-0" />}
+                          </div>
+                          <span className="text-[11px] text-white/40 font-mono block">@{creator.handle}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Callouts Match Section */}
+              {(activeTab === 'all' || activeTab === 'callouts') && matchedCallouts.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-sm text-white/70 uppercase tracking-wider flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yes" />
+                    <span>Callouts ({matchedCallouts.length})</span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    {matchedCallouts.map((callout) => (
+                      <CalloutCard key={callout.id} callout={callout} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {matchedCallouts.length === 0 && matchedCreators.length === 0 && (
+                <div className="text-center py-16 bg-[#070709] border border-white/10 rounded-2xl p-8 space-y-2">
+                  <Search className="w-8 h-8 text-white/20 mx-auto" />
+                  <h4 className="font-bold text-base text-white">No matching results</h4>
+                  <p className="text-xs text-white/40">Try searching for keywords like "Bitcoin", "Fed", "CryptoWhale", or "Macro".</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -172,8 +202,20 @@ export default function SearchPage() {
     <Suspense fallback={
       <div className="min-h-screen flex flex-col bg-[#070709] text-white">
         <Header />
-        <main className="flex-1 container max-w-screen-lg mx-auto px-4 py-16 text-center text-white/40">
-          Loading search...
+        <main className="flex-1 container max-w-screen-lg mx-auto px-4 py-8 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#070709] border border-white/10 rounded-2xl p-6 space-y-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 w-32 bg-white/10 rounded-md" />
+                  <div className="h-3 w-20 bg-white/5 rounded-md" />
+                </div>
+              </div>
+              <div className="h-5 w-3/4 bg-white/10 rounded-md" />
+              <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5" />
+            </div>
+          ))}
         </main>
       </div>
     }>
@@ -181,3 +223,4 @@ export default function SearchPage() {
     </Suspense>
   );
 }
+

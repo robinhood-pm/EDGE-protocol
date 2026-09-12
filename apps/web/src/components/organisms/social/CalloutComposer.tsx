@@ -13,22 +13,18 @@ interface CalloutComposerProps {
   onSuccess?: () => void;
 }
 
-interface UserPosition {
+interface SpotMarket {
   id: string;
-  market_id: string;
-  side: 'LONG' | 'SHORT';
-  size: string;
-  entry_price: string;
-  margin: string;
-  leverage: string;
-  currentMarkPrice?: number | null;
-  marketName?: string;
+  title: string;
+  category: string;
+  current_yes_probability?: number | null;
+  total_volume_usdg?: number | null;
   status: string;
 }
 
 export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
   const { address, isConnected } = useAccount();
-  
+
   const [headline, setHeadline] = useState('');
   const [thesis, setThesis] = useState('');
   const [conviction, setConviction] = useState<'YES' | 'NO'>('YES');
@@ -36,86 +32,50 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
   const [category, setCategory] = useState<string>('crypto');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Real user open positions fetched from API
-  const [positions, setPositions] = useState<UserPosition[]>([]);
-  const [isLoadingPositions, setIsLoadingPositions] = useState<boolean>(false);
-  const [selectedPositionId, setSelectedPositionId] = useState<string>('');
+  // Spot prediction markets fetched from API
+  const [spotMarkets, setSpotMarkets] = useState<SpotMarket[]>([]);
+  const [isLoadingMarkets, setIsLoadingMarkets] = useState<boolean>(false);
+  const [selectedMarketId, setSelectedMarketId] = useState<string>('');
 
-  // Fetch real positions when wallet is connected
+  // Fetch spot markets
   useEffect(() => {
-    if (!isConnected || !address) {
-      setPositions([]);
-      setSelectedPositionId('');
-      return;
-    }
-
-    const fetchUserPositions = async () => {
-      setIsLoadingPositions(true);
+    const fetchSpotMarkets = async () => {
+      setIsLoadingMarkets(true);
       try {
         const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
         const backendUrl = rawApiUrl ? rawApiUrl : '';
-        const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
-        const network = rawNetwork ? rawNetwork : 'testnet';
 
-        const res = await fetch(`${backendUrl}/api/perps/positions?network=${network}&trader=${address}`);
-        if (!res.ok) throw new Error('Failed to fetch positions');
-        
+        const res = await fetch(`${backendUrl}/api/markets`);
+        if (!res.ok) throw new Error('Failed to fetch spot markets');
+
         const data = await res.json();
-        if (data.success && Array.isArray(data.positions)) {
-          setPositions(data.positions);
-          if (data.positions.length > 0) {
-            setSelectedPositionId(data.positions[0].id);
+        if (data.success && Array.isArray(data.markets)) {
+          setSpotMarkets(data.markets);
+          if (data.markets.length > 0) {
+            setSelectedMarketId(data.markets[0].id);
           }
         }
       } catch (err) {
-        console.error('Failed to fetch user open positions:', err);
+        console.error('Failed to fetch spot markets:', err);
       } finally {
-        setIsLoadingPositions(false);
+        setIsLoadingMarkets(false);
       }
     };
 
-    fetchUserPositions();
-  }, [address, isConnected]);
+    fetchSpotMarkets();
+  }, []);
 
-  // Derived selected position object
-  const selectedPosition = positions.find((p) => p.id === selectedPositionId) || positions[0];
+  // Derived selected market object
+  const selectedMarket = spotMarkets.find((m) => m.id === selectedMarketId) || spotMarkets[0];
 
-  // Calculate real position values from selected position
-  const getPositionMetrics = () => {
-    if (!selectedPosition) return null;
-
-    const sizeNum = parseFloat(selectedPosition.size) || 0;
-    const entryNum = parseFloat(selectedPosition.entry_price) || 0;
-    const markNum = selectedPosition.currentMarkPrice || entryNum;
-    const leverageNum = parseFloat(selectedPosition.leverage) || 1;
-    const marginNum = parseFloat(selectedPosition.margin) || 0;
-
-    const notionalVal = sizeNum * markNum;
-    const pnl = selectedPosition.side === 'LONG' 
-      ? (markNum - entryNum) * sizeNum 
-      : (entryNum - markNum) * sizeNum;
-
-    return {
-      marketId: selectedPosition.market_id,
-      marketName: selectedPosition.marketName || selectedPosition.market_id,
-      side: selectedPosition.side,
-      leverage: leverageNum,
-      margin: marginNum,
-      notionalVal,
-      pnl,
-      positionValueStr: `$${notionalVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      profitValueStr: `${pnl >= 0 ? '+' : '-'}$${Math.abs(pnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    };
-  };
-
-  const metrics = getPositionMetrics();
-
-  // Auto-sync conviction with selected position side
+  // Auto-sync category when selected market changes
   useEffect(() => {
-    if (metrics) {
-      setConviction(metrics.side === 'LONG' ? 'YES' : 'NO');
+    if (selectedMarket) {
+      if (selectedMarket.category) {
+        setCategory(selectedMarket.category.toLowerCase());
+      }
     }
-  }, [selectedPositionId]);
+  }, [selectedMarketId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,8 +85,8 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
       return;
     }
 
-    if (!metrics || !selectedPosition) {
-      toast.error('You must select an active open position to create a Callout with verified Skin in the Game');
+    if (!selectedMarket) {
+      toast.error('Please select an active Spot market to create a Callout');
       return;
     }
 
@@ -150,13 +110,13 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
           creatorId: address.toLowerCase(),
           headline,
           thesis,
-          category,
+          category: category || selectedMarket.category || 'crypto',
           conviction,
           confidence,
-          marketId: metrics.marketId,
+          marketId: selectedMarket.id,
           callProbability: confidence,
-          positionValue: metrics.positionValueStr,
-          profitValue: metrics.profitValueStr,
+          positionValue: `$${(selectedMarket.total_volume_usdg || 0).toLocaleString()}`,
+          profitValue: '+0%',
           network,
         }),
       });
@@ -165,7 +125,7 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
         throw new Error('Backend publish failed');
       }
 
-      toast.success('Callout & Real Open Position published successfully!');
+      toast.success('Spot Market Callout published successfully!');
       setHeadline('');
       setThesis('');
       if (onSuccess) onSuccess();
@@ -186,7 +146,7 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
         <div className="space-y-2 max-w-md mx-auto">
           <h2 className="text-xl font-bold text-white tracking-tight">Connect Wallet to Create Callout</h2>
           <p className="text-sm text-white/60 leading-relaxed">
-            Edge Protocol requires connected Web3 wallet and verified real open positions to post Callouts with transparent Skin in the Game.
+            Connect your Web3 wallet to post predictions and callouts on Spot Prediction Markets.
           </p>
         </div>
         <div className="flex justify-center pt-2">
@@ -201,81 +161,76 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yes" />
-          <h2 className="text-lg font-bold text-white">Create a Verified Callout</h2>
+          <h2 className="text-lg font-bold text-white">Create Spot Market Callout</h2>
         </div>
         <Badge variant="secondary" className="bg-yes/10 text-yes border-yes/20">
-          Skin in the Game Verified
+          Spot Market Verified
         </Badge>
       </div>
 
-      {/* Real Open Positions Selection Section */}
+      {/* Spot Prediction Market Selection Section */}
       <div className="bg-[#11131c] border border-white/10 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <label className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
-            <span>Select Real Open Position *</span>
+            <span>Select Target Spot Market *</span>
           </label>
           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
-            REAL ON-CHAIN DATA
+            SPOT PREDICTION MARKET
           </Badge>
         </div>
 
-        {isLoadingPositions ? (
+        {isLoadingMarkets ? (
           <div className="flex items-center justify-center py-6 text-white/50 gap-2 text-xs">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Fetching user open positions...</span>
+            <span>Fetching spot markets...</span>
           </div>
-        ) : positions.length === 0 ? (
+        ) : spotMarkets.length === 0 ? (
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-yellow-400 text-sm font-semibold">
               <AlertTriangle className="w-4 h-4" />
-              <span>No Active Open Positions Found</span>
+              <span>No Active Spot Markets Available</span>
             </div>
             <p className="text-xs text-white/70 max-w-md mx-auto leading-relaxed">
-              You must have an active open position in Perps Trading before posting a Callout. Dummy or fake positions are strictly prohibited.
+              There are currently no open spot prediction markets available for callout creation.
             </p>
-            <Link href="/perps" className="inline-block">
-              <Button type="button" className="bg-yes text-black font-bold text-xs h-9 px-4 rounded-lg hover:bg-yes/90">
-                Open a Perp Position Now
-              </Button>
-            </Link>
           </div>
         ) : (
           <div className="space-y-3">
             <select
-              value={selectedPositionId}
-              onChange={(e) => setSelectedPositionId(e.target.value)}
+              value={selectedMarketId}
+              onChange={(e) => setSelectedMarketId(e.target.value)}
               className="w-full bg-[#151924] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yes text-sm font-medium"
             >
-              {positions.map((pos) => (
-                <option key={pos.id} value={pos.id}>
-                  {pos.marketName || pos.market_id} — {pos.side} {pos.leverage}x (Size: {pos.size}, Entry: ${pos.entry_price})
+              {spotMarkets.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.title} ({m.category || 'Spot'}) — YES {Math.round(Number(m.current_yes_probability || 50))}%
                 </option>
               ))}
             </select>
 
-            {/* Selected Position Live Card Preview */}
-            {metrics && (
+            {/* Selected Spot Market Live Card Preview */}
+            {selectedMarket && (
               <div className="bg-black/50 border border-emerald-500/30 rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-2">
                     <span className="text-white/40">Market:</span>
-                    <span className="font-bold text-white">{metrics.marketName}</span>
+                    <span className="font-bold text-white">{selectedMarket.title}</span>
                   </div>
-                  <Badge className={metrics.side === 'LONG' ? 'bg-yes/20 text-yes border-yes/30' : 'bg-no/20 text-no border-no/30'}>
-                    {metrics.side} {metrics.leverage}x
+                  <Badge className="bg-yes/20 text-yes border-yes/30">
+                    YES {Math.round(Number(selectedMarket.current_yes_probability || 50))}%
                   </Badge>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-xs font-mono">
                   <div>
-                    <span className="text-white/40 block text-[10px] uppercase">Position Value</span>
-                    <span className="font-bold text-white text-sm">{metrics.positionValueStr}</span>
+                    <span className="text-white/40 block text-[10px] uppercase">Category</span>
+                    <span className="font-bold text-white text-xs uppercase">{selectedMarket.category || 'SPOT'}</span>
                   </div>
                   <div>
-                    <span className="text-white/40 block text-[10px] uppercase">Unrealized PnL</span>
-                    <span className={`font-bold text-sm ${metrics.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {metrics.profitValueStr}
+                    <span className="text-white/40 block text-[10px] uppercase">Total Volume</span>
+                    <span className="font-bold text-emerald-400 text-xs">
+                      ${(selectedMarket.total_volume_usdg || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -360,13 +315,13 @@ export function CalloutComposer({ onSuccess }: CalloutComposerProps) {
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={isSubmitting || !headline.trim() || positions.length === 0}
+        disabled={isSubmitting || !headline.trim() || spotMarkets.length === 0}
         className="w-full bg-white text-black hover:bg-white/90 font-bold h-11 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <Loader2 className="w-5 h-5 animate-spin mx-auto" />
         ) : (
-          'Publish Callout with Real Position'
+          'Publish Spot Callout'
         )}
       </Button>
     </form>

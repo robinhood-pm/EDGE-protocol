@@ -15,6 +15,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { toast } from 'react-hot-toast';
 import { FloatingTransactions } from '@/components/organisms/FloatingTransactions';
+import { formatCompactVolume } from '@/lib/utils';
 
 // Setup Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -189,7 +190,7 @@ export default function MarketPage({ params }: { params: Promise<{ slug: string 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs text-muted font-medium">
                     <span>{market.closeTimeFormatted}</span>
-                    <span>Total Vol ${market.totalVolume.toLocaleString()}</span>
+                    <span>Total Vol {formatCompactVolume(market.totalVolume)}</span>
                     {market.status === 'Live' && (
                       <span className="flex items-center gap-1 text-red-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />

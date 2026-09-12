@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { CalloutMarket } from '@/types/social';
 import { TrendingUp, ArrowRight } from 'lucide-react';
 
+import { formatCompactVolume } from '@/lib/utils';
+
 interface EmbeddedMarketCardProps {
   market: CalloutMarket;
   callProbability: number;
@@ -41,7 +43,7 @@ export function EmbeddedMarketCard({
               {market.title}
             </h4>
             <span className="text-[10px] text-white/40 block truncate">
-              {market.totalVolume ? `$${(market.totalVolume / 1000).toFixed(1)}K Vol` : 'Prediction Market'}
+              {market.totalVolume ? `${formatCompactVolume(market.totalVolume)} Vol` : 'Prediction Market'}
             </span>
           </div>
         </div>

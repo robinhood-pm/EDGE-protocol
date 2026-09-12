@@ -31,10 +31,10 @@ export class SearchService {
       return { query: queryStr, network, creators: [], callouts: [], markets: [] };
     }
 
-    // 1. Search Creators/Profiles
+    // 1. Search Creators/Users
     const { data: creators } = await supabase
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url, is_verified, bio')
+      .from('users')
+      .select('id, wallet_address, handle, display_name, avatar_url, is_verified, bio')
       .or(`handle.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%,bio.ilike.%${cleanQuery}%`)
       .limit(10);
 

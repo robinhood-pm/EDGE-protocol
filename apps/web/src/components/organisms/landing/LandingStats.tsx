@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { formatCompactVolume } from '@/lib/utils';
 
 export const LandingStats = () => {
   const { data: stats } = useQuery({
@@ -15,13 +16,7 @@ export const LandingStats = () => {
     }
   });
 
-  const formatVolume = (vol: number) => {
-    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
-    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}K`;
-    return `$${vol}`;
-  };
-
-  const volumeStr = stats ? formatVolume(stats.totalVolume) : '$0';
+  const volumeStr = stats ? formatCompactVolume(stats.totalVolume) : '$0';
   const predictionsStr = stats ? stats.predictionsMade.toLocaleString() : '0';
   const tradersStr = stats ? stats.activeTraders.toLocaleString() : '0';
   const resolvedStr = stats ? stats.marketsResolved.toLocaleString() : '0';

@@ -1,22 +1,40 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
+import { updateUserTradeStats } from '../services/userService';
 
 export const getUserStats = async (req: Request, res: Response) => {
   try {
-    const { address } = req.params;
+    const rawAddress = String(req.params.address || '');
+    if (!rawAddress) {
+      return res.status(400).json({ error: 'Missing wallet address parameter' });
+    }
+    const normalized = rawAddress.toLowerCase();
+    const networkParam = Array.isArray(req.query.network) ? req.query.network[0] : req.query.network;
+    const network = String(networkParam || process.env.NETWORK || 'testnet').toLowerCase();
+
+    // Trigger sync/update for user trade stats
+    await updateUserTradeStats(normalized, network);
 
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .eq('wallet_address', address)
-      .single();
+      .eq('wallet_address', normalized)
+      .eq('network', network)
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = 0 rows returned
+    if (error) {
       return res.status(500).json({ error: error.message });
     }
 
     if (!data) {
-      return res.json({ user: { wallet_address: address, historical_pnl_usdg: 0, total_trades: 0 } });
+      return res.json({
+        user: {
+          wallet_address: normalized,
+          network,
+          total_trades: 0,
+          historical_pnl_usdg: 0,
+        },
+      });
     }
 
     res.json({ user: data });

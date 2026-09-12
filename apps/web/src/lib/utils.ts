@@ -13,7 +13,16 @@ export function formatCompactNumber(num: number | string): string {
   if (n >= 1_000) {
     return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
-  return n.toString();
+  if (Number.isInteger(n)) {
+    return n.toString();
+  }
+  return n.toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
+}
+
+export function formatCompactVolume(num: number | string): string {
+  const n = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(n) || n <= 0) return '$0';
+  return '$' + formatCompactNumber(n);
 }
 
 export function formatTimeAgo(dateInput: number | string | Date): string {

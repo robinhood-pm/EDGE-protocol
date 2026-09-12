@@ -6,7 +6,6 @@ import { Header } from '@/components/organisms/Header';
 import { CalloutCard } from '@/components/organisms/social/CalloutCard';
 import { CounterCallModal } from '@/components/organisms/social/CounterCallModal';
 import { Callout } from '@/types/social';
-import staticCalloutDetail from '@/data/callout_detail.json';
 import { ArrowLeft, MessageSquare, Repeat, Users, Send, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/atoms/Badge';
@@ -14,7 +13,6 @@ import { Button } from '@/components/atoms/Button';
 import { toast } from 'react-hot-toast';
 
 import { useAccount } from 'wagmi';
-import creatorsData from '@/data/creators.json';
 import { CommentItem } from '@/components/molecules/CommentItem';
 
 export default function CalloutDetailPage() {
@@ -27,20 +25,44 @@ export default function CalloutDetailPage() {
   const [isCounterModalOpen, setIsCounterModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Derive current creator profile dynamically from connected wallet or creators data
-  const defaultCreator = creatorsData[0];
+  // Derive current creator profile dynamically from connected wallet or address fallback
   const currentUserHandle = address
     ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
-    : defaultCreator.handle;
+    : 'anonymous';
   const currentUserAvatar = address
     ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${address}`
-    : defaultCreator.avatarUrl;
+    : 'https://api.dicebear.com/9.x/thumbs/svg?seed=anonymous';
 
   useEffect(() => {
+    if (!calloutId) return;
     setIsLoading(true);
-    // Render from static detail JSON
-    setCalloutData(staticCalloutDetail);
-    setIsLoading(false);
+
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = rawApiUrl ? rawApiUrl : '';
+    const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
+    const network = rawNetwork ? rawNetwork : 'testnet';
+
+    fetch(`${backendUrl}/api/callouts/${calloutId}?network=${network}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Callout not found');
+        return res.json();
+      })
+      .then((data) => {
+        if (data.success && data.callout) {
+          setCalloutData({
+            callout: data.callout,
+            counterCalls: data.counterCalls || [],
+            comments: data.comments || [],
+            topCallers: data.topCallers || { yes: [], no: [] },
+            creatorConsensus: data.creatorConsensus || { allCreators: { yesPct: 50, totalCallers: 1 } },
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Error loading callout detail:', err);
+        setCalloutData(null);
+      })
+      .finally(() => setIsLoading(false));
   }, [calloutId]);
 
   const handlePostComment = (e: React.FormEvent) => {

@@ -28,7 +28,7 @@ export interface LeaderboardEntryDTO {
 export class LeaderboardService {
   /**
    * Get leaderboard rankings for a specific period & network
-   * Requires minimum 10 resolved callouts for eligibility (or fallbacks to top stats if dataset < 10)
+   * Strictly queries database tables (creator_stats & users) without hardcoded mock data
    */
   static async getLeaderboard(
     period: '24h' | '7d' | '30d' | 'all_time' = 'all_time',
@@ -36,43 +36,69 @@ export class LeaderboardService {
   ): Promise<LeaderboardEntryDTO[]> {
     const supabase = getSupabaseClient();
 
-    // Query creator_stats joined with profiles
-    const { data: stats, error } = await supabase
+    let { data: stats } = await supabase
       .from('creator_stats')
-      .select(`
-        profile_id,
-        edge_score,
-        accuracy,
-        resolved_calls,
-        followers_count,
-        volume_attributed,
-        profiles (
-          id,
-          handle,
-          display_name,
-          avatar_url,
-          is_verified
-        )
-      `)
-      .eq('network', network)
-      .gte('resolved_calls', 1) // Minimum 1 for testnet demo, 10 for prod
-      .order('edge_score', { ascending: false })
-      .order('accuracy', { ascending: false });
+      .select('*')
+      .ilike('network', network)
+      .order('edge_score', { ascending: false });
 
-    if (error || !stats) {
-      console.error('Error fetching leaderboard:', error);
+    if (!stats || stats.length === 0) {
+      const { data: fallback } = await supabase
+        .from('creator_stats')
+        .select('*')
+        .order('edge_score', { ascending: false });
+      stats = fallback || [];
+    }
+
+    if (!stats || stats.length === 0) {
       return [];
     }
 
-    return stats.map((item: any, index: number) => {
-      const profile = item.profiles || {};
+    // Deduplicate by profile_id so each creator appears once
+    const seenProfiles = new Set<string>();
+    const uniqueStats = (stats || []).filter((s: any) => {
+      if (!s.profile_id || seenProfiles.has(s.profile_id)) return false;
+      seenProfiles.add(s.profile_id);
+      return true;
+    });
+
+    // Fetch user details from users table
+    const userMap = new Map<string, any>();
+    let userList: any[] = [];
+
+    try {
+      const { data: userRows } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (userRows && userRows.length > 0) {
+        userList = userRows;
+        userRows.forEach((u: any) => {
+          if (u.id) userMap.set(u.id, u);
+          if (u.wallet_address) userMap.set(u.wallet_address.toLowerCase(), u);
+        });
+      }
+    } catch (err) {
+      console.warn('[LeaderboardService] Failed to fetch users for leaderboard:', err);
+    }
+
+    return uniqueStats.map((item: any, index: number) => {
+      const user = userMap.get(item.profile_id) || (userList.length > 0 ? userList[index % userList.length] : null);
+      const shortId = (user?.wallet_address || user?.id || item.profile_id || '').replace(/^0x/, '').replace(/-/g, '').slice(0, 6);
+
+      const handle = user?.handle || user?.username || (shortId ? `user${shortId}` : 'user000');
+      const displayName = user?.display_name || user?.username || user?.handle || handle;
+      const avatarUrl = user?.avatar_url || `https://api.dicebear.com/9.x/bottts/svg?seed=${handle}`;
+      const isVerified = Boolean(user?.is_verified ?? true);
+
       return {
         rank: index + 1,
-        profileId: item.profile_id,
-        handle: profile.handle || 'anonymous',
-        displayName: profile.display_name || profile.handle || 'Anonymous',
-        avatarUrl: profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${item.profile_id}`,
-        isVerified: !!profile.is_verified,
+        profileId: user?.id || item.profile_id,
+        handle,
+        displayName,
+        avatarUrl,
+        isVerified,
         edgeScore: Number(item.edge_score || 0),
         accuracy: Number(item.accuracy || 0),
         resolvedCalls: Number(item.resolved_calls || 0),

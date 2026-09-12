@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { supabase } from '../utils/supabase';
+import { updateUserTradeStats } from './userService';
 
 // Minimal ABI to listen to OrderMatched
 const EXCHANGE_ABI = [
@@ -23,82 +24,118 @@ export const startIndexer = () => {
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const exchangeContract = new ethers.Contract(exchangeAddress, EXCHANGE_ABI, provider);
+  const perpExchangeContract = perpExchangeAddress ? new ethers.Contract(perpExchangeAddress, PERP_EXCHANGE_ABI, provider) : null;
 
-  console.log(`📡 [Indexer] Listening to Exchange at ${exchangeAddress} on ${network}`);
+  console.log(`📡 [Indexer] Starting stateless block poll indexer on ${network}`);
 
-  exchangeContract.on("OrderMatched", async (buyOrderHash, sellOrderHash, buyer, seller, marketIdRaw, outcome, amountRaw, priceRaw, event) => {
+  let lastProcessedBlock: number | null = null;
+  let isPolling = false;
+
+  const pollBlocks = async () => {
+    if (isPolling) return;
+    isPolling = true;
+
     try {
-      const marketId = marketIdRaw.toString();
-      
-      let tradePrice = Number(priceRaw);
-      if (tradePrice > 100) {
-        tradePrice = tradePrice / 1e6;
+      const currentBlock = await provider.getBlockNumber();
+      if (lastProcessedBlock === null) {
+        lastProcessedBlock = Math.max(0, currentBlock - 5);
       }
 
-      const tradeAmount = Number(ethers.formatUnits(amountRaw, 6)); 
-      const txHash = event.log.transactionHash;
-
-      console.log(`[Indexer] 🟢 OrderMatched caught! Market: ${marketId}, Buyer: ${buyer}, Seller: ${seller}, Price: ${tradePrice}¢, Amount: ${tradeAmount}`);
-
-      const { error: insertError } = await supabase.from('trades').insert({
-        network,
-        market_id: marketId,
-        price: tradePrice / 100,
-        amount: tradeAmount,
-        buyer_address: buyer,
-        seller_address: seller,
-        transaction_hash: txHash,
-      });
-
-      if (insertError) {
-        console.error(`[Indexer] Error inserting trade:`, insertError.message);
+      if (currentBlock <= lastProcessedBlock) {
+        isPolling = false;
+        return;
       }
 
-      const tradeVolume = (tradePrice / 100) * tradeAmount;
-      const isYes = Number(outcome) === 1;
-      const newYesProbability = isYes ? tradePrice : (100 - tradePrice);
+      const fromBlock = lastProcessedBlock + 1;
+      // Cap at maximum 10 blocks (fromBlock to fromBlock + 9) for Alchemy Free Tier limits
+      const toBlock = Math.min(currentBlock, fromBlock + 9);
 
+      // 1. Process Spot Exchange OrderMatched events
       try {
-        await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
-      } catch (err) {
-        const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
-        if (m) {
-          await supabase.from('markets')
-            .update({ 
-              total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, 
-              current_yes_probability: newYesProbability 
-            })
-            .eq('id', marketId)
-            .eq('network', network);
+        const spotEvents = await exchangeContract.queryFilter("OrderMatched", fromBlock, toBlock);
+        for (const event of spotEvents) {
+          if (!('args' in event)) continue;
+          const [buyOrderHash, sellOrderHash, buyer, seller, marketIdRaw, outcome, amountRaw, priceRaw] = event.args;
+          const marketId = marketIdRaw.toString();
+          
+          let tradePrice = Number(priceRaw);
+          if (tradePrice > 100) {
+            tradePrice = tradePrice / 1e6;
+          }
+
+          const tradeAmount = Number(ethers.formatUnits(amountRaw, 6)); 
+          const txHash = event.transactionHash;
+
+          console.log(`[Indexer] 🟢 OrderMatched caught! Market: ${marketId}, Buyer: ${buyer}, Seller: ${seller}, Price: ${tradePrice}¢, Amount: ${tradeAmount}`);
+
+          const { error: insertError } = await supabase.from('trades').insert({
+            network,
+            market_id: marketId,
+            price: tradePrice / 100,
+            amount: tradeAmount,
+            buyer_address: buyer,
+            seller_address: seller,
+            transaction_hash: txHash,
+          });
+
+          if (insertError) {
+            console.error(`[Indexer] Error inserting trade:`, insertError.message);
+          }
+
+          const tradeVolume = (tradePrice / 100) * tradeAmount;
+          const isYes = Number(outcome) === 1;
+          const newYesProbability = isYes ? tradePrice : (100 - tradePrice);
+
+          try {
+            await supabase.rpc('increment_volume', { market_id_param: marketId, network_param: network, volume_delta: tradeVolume });
+          } catch (err) {
+            const { data: m } = await supabase.from('markets').select('total_volume_usdg').eq('id', marketId).eq('network', network).single();
+            if (m) {
+              await supabase.from('markets')
+                .update({ 
+                  total_volume_usdg: Number(m.total_volume_usdg) + tradeVolume, 
+                  current_yes_probability: newYesProbability 
+                })
+                .eq('id', marketId)
+                .eq('network', network);
+            }
+          }
+
+          console.log(`[Indexer] ✅ Successfully updated DB for trade in Market ${marketId}`);
+          updateUserTradeStats(buyer, network);
+          updateUserTradeStats(seller, network);
+        }
+      } catch (spotErr) {
+        console.error(`[Indexer] Error querying OrderMatched events:`, spotErr);
+      }
+
+      // 2. Process Perp Exchange PerpOrderMatched events
+      if (perpExchangeContract) {
+        try {
+          const perpEvents = await perpExchangeContract.queryFilter("PerpOrderMatched", fromBlock, toBlock);
+          for (const event of perpEvents) {
+            if (!('args' in event)) continue;
+            const [longTrader, shortTrader, marketIdRaw, sizeRaw, priceRaw] = event.args;
+            const marketId = marketIdRaw.toString();
+            const size = Number(ethers.formatUnits(sizeRaw, 18));
+            const price = Number(ethers.formatUnits(priceRaw, 18));
+
+            console.log(`[Indexer] 🟣 PerpOrderMatched! Market: ${marketId}, Long: ${longTrader}, Short: ${shortTrader}, Price: ${price}, Size: ${size}`);
+          }
+        } catch (perpErr) {
+          console.error(`[Indexer] Error querying PerpOrderMatched events:`, perpErr);
         }
       }
 
-      console.log(`[Indexer] ✅ Successfully updated DB for trade in Market ${marketId}`);
-    } catch (error) {
-      console.error(`[Indexer] ❌ Error processing OrderMatched event:`, error);
+      lastProcessedBlock = toBlock;
+    } catch (pollErr) {
+      console.error(`[Indexer] Error during block poll:`, pollErr);
+    } finally {
+      isPolling = false;
     }
-  });
+  };
 
-  if (perpExchangeAddress) {
-    const perpExchangeContract = new ethers.Contract(perpExchangeAddress, PERP_EXCHANGE_ABI, provider);
-    console.log(`📡 [Indexer] Listening to PerpExchange at ${perpExchangeAddress} on ${network}`);
-
-    perpExchangeContract.on("PerpOrderMatched", async (longTrader, shortTrader, marketIdRaw, sizeRaw, priceRaw, event) => {
-      try {
-        const marketId = marketIdRaw.toString();
-        const size = Number(ethers.formatUnits(sizeRaw, 18));
-        const price = Number(ethers.formatUnits(priceRaw, 18));
-        const txHash = event.log.transactionHash;
-
-        console.log(`[Indexer] 🟣 PerpOrderMatched! Market: ${marketId}, Long: ${longTrader}, Short: ${shortTrader}, Price: ${price}, Size: ${size}`);
-
-        // Update DB logic here if necessary, but perpsMatchingEngine handles optimistic inserts for off-chain speed.
-        // In a strict on-chain indexer architecture, we'd insert into perp_fills here.
-      } catch (error) {
-        console.error(`[Indexer] ❌ Error processing PerpOrderMatched event:`, error);
-      }
-    });
-  } else {
-    console.warn("⚠️ [Indexer] Missing PERP_EXCHANGE_ADDRESS. Perp indexing disabled.");
-  }
+  // Poll every 5 seconds without stateful RPC filters
+  setInterval(pollBlocks, 5000);
+  pollBlocks();
 };
