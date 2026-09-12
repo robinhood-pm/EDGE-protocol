@@ -42,6 +42,7 @@ export interface CalloutMetrics {
   saves: number;
   tradesAttributed: number;
   volumeAttributed: string;
+  marketCap?: string;
 }
 
 export interface CalloutMarket {
@@ -53,6 +54,9 @@ export interface CalloutMarket {
   totalVolume: number;
   status?: 'Live' | 'Closed' | 'Resolved';
   endTime?: string;
+  positionValue?: string;
+  profitValue?: string;
+  marketCap?: string;
 }
 
 export type ConvictionType = 'YES' | 'NO';

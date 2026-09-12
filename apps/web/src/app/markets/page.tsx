@@ -82,7 +82,7 @@ export default function Home() {
           </div>
 
           {/* Social Prediction Sidebar */}
-          <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
+          <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6">
             <TopCallers />
             <TrendingCallouts />
           </div>

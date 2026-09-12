@@ -4,14 +4,16 @@ import React, { useState } from 'react';
 import { CalloutMetrics } from '@/types/social';
 import { Heart, MessageSquare, Repeat, Eye, Bookmark, Share2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { formatCompactNumber } from '@/lib/utils';
 
 interface SocialActionBarProps {
   metrics: CalloutMetrics;
   onCommentClick?: () => void;
   onCounterClick?: () => void;
+  isCompact?: boolean;
 }
 
-export function SocialActionBar({ metrics, onCommentClick, onCounterClick }: SocialActionBarProps) {
+export function SocialActionBar({ metrics, onCommentClick, onCounterClick, isCompact = false }: SocialActionBarProps) {
   const [likes, setLikes] = useState(metrics.likes);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -45,7 +47,7 @@ export function SocialActionBar({ metrics, onCommentClick, onCounterClick }: Soc
 
   return (
     <div className="flex items-center justify-between text-xs text-white/50 pt-3 border-t border-white/5">
-      <div className="flex items-center gap-5 sm:gap-6">
+      <div className="flex items-center gap-4 sm:gap-6">
         {/* Like */}
         <button
           onClick={handleLike}
@@ -54,7 +56,7 @@ export function SocialActionBar({ metrics, onCommentClick, onCounterClick }: Soc
           }`}
         >
           <Heart className={`w-4 h-4 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
-          <span className="font-mono">{likes}</span>
+          <span className="font-mono">{formatCompactNumber(likes)}</span>
         </button>
 
         {/* Comments */}
@@ -63,7 +65,7 @@ export function SocialActionBar({ metrics, onCommentClick, onCounterClick }: Soc
           className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
         >
           <MessageSquare className="w-4 h-4" />
-          <span className="font-mono">{metrics.comments}</span>
+          <span className="font-mono">{formatCompactNumber(metrics.comments)}</span>
         </button>
 
         {/* Repost */}
@@ -72,17 +74,26 @@ export function SocialActionBar({ metrics, onCommentClick, onCounterClick }: Soc
           className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
         >
           <Repeat className="w-4 h-4" />
-          <span className="font-mono">{metrics.reposts}</span>
+          <span className="font-mono">{formatCompactNumber(metrics.reposts)}</span>
         </button>
 
-        {/* Views */}
-        <div className="flex items-center gap-1.5 text-white/40">
-          <Eye className="w-4 h-4" />
-          <span className="font-mono">{metrics.views.toLocaleString()}</span>
-        </div>
+        {/* Views (Hidden when compact, since views is displayed at top right of compact card) */}
+        {!isCompact && (
+          <div className="flex items-center gap-1.5 text-white/40">
+            <Eye className="w-4 h-4" />
+            <span className="font-mono">{formatCompactNumber(metrics.views)}</span>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {/* Market Cap (Hidden when compact) */}
+        {!isCompact && metrics.marketCap && (
+          <span className="text-[11px] font-mono font-bold text-white/40">
+            MC {metrics.marketCap}
+          </span>
+        )}
+
         {/* Bookmark */}
         <button
           onClick={handleSave}

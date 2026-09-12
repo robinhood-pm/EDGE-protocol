@@ -21,7 +21,9 @@
       "image": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
       "yesProbability": 89,
       "noProbability": 11,
-      "totalVolume": 5200000
+      "totalVolume": 5200000,
+      "positionValue": "$1,148.53",
+      "profitValue": "+$937.62"
     },
     "callProbability": 72,
     "currentProbability": 89,
@@ -37,7 +39,8 @@
       "reposts": 18,
       "saves": 45,
       "tradesAttributed": 89,
-      "volumeAttributed": "342000"
+      "volumeAttributed": "342000",
+      "marketCap": "$238K"
     },
     "snapshot": {
       "probabilityAtCall": 72,
@@ -67,7 +70,9 @@
       "image": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
       "yesProbability": 45,
       "noProbability": 55,
-      "totalVolume": 650000
+      "totalVolume": 650000,
+      "positionValue": "$405.99",
+      "profitValue": "+$205.29"
     },
     "callProbability": 52,
     "currentProbability": 45,
@@ -83,7 +88,8 @@
       "reposts": 8,
       "saves": 19,
       "tradesAttributed": 34,
-      "volumeAttributed": "87000"
+      "volumeAttributed": "87000",
+      "marketCap": "$23.3K"
     },
     "snapshot": {
       "probabilityAtCall": 52,
@@ -113,7 +119,9 @@
       "image": "https://cryptologos.cc/logos/solana-sol-logo.png",
       "yesProbability": 68,
       "noProbability": 32,
-      "totalVolume": 1245000
+      "totalVolume": 1245000,
+      "positionValue": "$344.52",
+      "profitValue": "+$958.29"
     },
     "callProbability": 53,
     "currentProbability": 68,
