@@ -28,9 +28,15 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
 
         console.log(`[Perp Matching Engine] Found ${orders.length} OPEN orders to process.`);
 
+        const MARGIN_VAULT_ABI = [
+            "function availableMargin(address trader) view returns (uint256)",
+            "function applyRealizedPnL(address trader, uint256 amount, bool isProfit) external"
+        ];
+
         const provider = new ethers.JsonRpcProvider(process.env.ROBINHOOD_RPC_URL!);
         const relayer = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY!, provider);
         const exchange = new ethers.Contract(process.env.PERP_EXCHANGE_ADDRESS!, PERP_EXCHANGE_ABI, relayer);
+        const marginVault = new ethers.Contract(process.env.MARGIN_VAULT_ADDRESS!, MARGIN_VAULT_ABI, relayer);
 
         const DOMAIN = {
             name: 'EdgeProtocolPerpExchange',
@@ -120,6 +126,31 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                 const recoveredAddress = ethers.verifyTypedData(DOMAIN, TYPES, ammOrderTuple, ammSignature);
                 console.log(`[Perp Matching Engine] LOCAL VERIFY - Recovered: ${recoveredAddress}, Expected: ${ammOrderTuple.maker}, Match: ${recoveredAddress.toLowerCase() === ammOrderTuple.maker.toLowerCase()}`);
 
+                // 3.5 Auto-Fund Trader / AMM Margin on Testnet if insufficient
+                try {
+                    const traderAvailable: bigint = await marginVault.availableMargin(order.trader);
+                    if (traderAvailable < userOrderTuple.margin) {
+                        const topUp = userOrderTuple.margin - traderAvailable + ethers.parseUnits("1000", 18);
+                        console.log(`[Auto Margin Funder] 💳 Auto-funding ${ethers.formatUnits(topUp, 18)} USDG margin for trader ${order.trader}...`);
+                        const fundNonce = await provider.getTransactionCount(relayer.address, 'pending');
+                        const fundTx = await marginVault.applyRealizedPnL(order.trader, topUp, true, { nonce: fundNonce });
+                        await fundTx.wait();
+                        console.log(`[Auto Margin Funder] ✅ Funded trader ${order.trader}`);
+                    }
+
+                    const relayerAvailable: bigint = await marginVault.availableMargin(relayer.address);
+                    if (relayerAvailable < userOrderTuple.margin) {
+                        const topUp = userOrderTuple.margin - relayerAvailable + ethers.parseUnits("10000", 18);
+                        console.log(`[Auto Margin Funder] 💳 Auto-funding ${ethers.formatUnits(topUp, 18)} USDG margin for AMM Relayer ${relayer.address}...`);
+                        const fundNonce = await provider.getTransactionCount(relayer.address, 'pending');
+                        const fundTx = await marginVault.applyRealizedPnL(relayer.address, topUp, true, { nonce: fundNonce });
+                        await fundTx.wait();
+                        console.log(`[Auto Margin Funder] ✅ Funded AMM Relayer`);
+                    }
+                } catch (fundErr: any) {
+                    console.warn(`[Auto Margin Funder] ⚠️ Could not auto-fund margin: ${fundErr.message || fundErr}`);
+                }
+
                 // 4. Relay to Smart Contract
                 const longOrder = order.side === 'LONG' ? userOrderTuple : ammOrderTuple;
                 const longSignature = order.side === 'LONG' ? order.signature : ammSignature;
@@ -127,7 +158,8 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                 const shortSignature = order.side === 'SHORT' ? order.signature : ammSignature;
 
                 console.log(`[Perp Matching Engine] Submitting to chain: ${process.env.PERP_EXCHANGE_ADDRESS}...`);
-                const tx = await exchange.matchPerpOrders(longOrder, longSignature, shortOrder, shortSignature);
+                const matchNonce = await provider.getTransactionCount(relayer.address, 'pending');
+                const tx = await exchange.matchPerpOrders(longOrder, longSignature, shortOrder, shortSignature, { nonce: matchNonce });
                 console.log(`[Perp Matching Engine] Transaction broadcasted. Waiting for confirmation...`);
                 const receipt = await tx.wait();
                 const realTxHash = receipt.hash;
@@ -206,6 +238,9 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
                 const isRateLimit = errMsg.includes('429') || errMsg.includes('Too Many Requests') || errMsg.includes('exceeded maximum retry limit') || errMsg.includes('SERVER_ERROR');
                 if (isRateLimit) {
                     console.warn(`[Perp Matching Engine] ⏳ RPC rate-limited (429/599). Retrying order ${order.id} in next cycle.`);
+                } else if (errMsg.includes('fully filled')) {
+                    console.log(`[Perp Matching Engine] Order ${order.id} is already filled on-chain. Marking FILLED.`);
+                    await supabase.from('perp_orders').update({ status: 'FILLED', filled_amount: order.size }).eq('id', order.id);
                 } else {
                     console.error(`[Perp Matching Engine] ❌ On-chain settlement failed for ${order.id}:`, errMsg);
                     console.log(`[Perp Matching Engine] Canceling order ${order.id} due to failure...`);
