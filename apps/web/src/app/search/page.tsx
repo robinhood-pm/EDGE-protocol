@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/organisms/Header';
 import { CalloutCard } from '@/components/organisms/social/CalloutCard';
@@ -8,10 +8,10 @@ import { Badge } from '@/components/atoms/Badge';
 import { Callout, Profile } from '@/types/social';
 import staticCallouts from '@/data/callouts.json';
 import staticCreators from '@/data/creators.json';
-import { Search, Users, Zap, Grid, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, Users, Zap, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams?.get('q') || '';
 
@@ -164,5 +164,20 @@ export default function SearchPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col bg-[#070709] text-white">
+        <Header />
+        <main className="flex-1 container max-w-screen-lg mx-auto px-4 py-16 text-center text-white/40">
+          Loading search...
+        </main>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }
