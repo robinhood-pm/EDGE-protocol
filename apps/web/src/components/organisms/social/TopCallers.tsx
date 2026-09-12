@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trophy, CheckCircle2, ChevronRight } from 'lucide-react';
-import { FollowButton } from '@/components/molecules/FollowButton';
 
 export interface TopCallerDTO {
   id: string;
@@ -100,8 +99,6 @@ export function TopCallers() {
                   </div>
                 </div>
               </Link>
-
-              <FollowButton creatorId={creator.id} size="sm" className="h-7 text-[11px] px-3" />
             </div>
           ))}
         </div>

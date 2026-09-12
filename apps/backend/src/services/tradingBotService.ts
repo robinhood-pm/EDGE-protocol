@@ -44,7 +44,12 @@ function initWallets() {
         process.env.PRIVKEY_BOT_B,
         process.env.PRIVKEY_BOT_C,
         process.env.PRIVKEY_BOT_D,
-        process.env.PRIVKEY_BOT_E
+        process.env.PRIVKEY_BOT_E,
+        process.env.PRIVKEY_BOT_F,
+        process.env.PRIVKEY_BOT_G,
+        process.env.PRIVKEY_BOT_H,
+        process.env.PRIVKEY_BOT_I,
+        process.env.PRIVKEY_BOT_J,
     ].filter(Boolean);
 
     botWallets = keys.map(k => new ethers.Wallet(k!));
@@ -63,7 +68,7 @@ export function startTradingBotService() {
         return;
     }
 
-    console.log(`🤖 [Trading Bot Service] Started with ${botWallets.length} bot wallets (Priority 5:1 Weather vs Crypto).`);
+    console.log(`🤖 [Trading Bot Service] Started with ${botWallets.length} bot wallets (staggered 15m ticks, 1h cycle).`);
 
     const loop = async () => {
         try {
@@ -76,35 +81,25 @@ export function startTradingBotService() {
 
             const markets: string[] = activeMarkets.map((m: any) => m.id);
 
-            // Separate into Weather vs Crypto
-            const weatherMarkets = markets.filter(m => isWeatherMarket(m));
-            const cryptoMarkets = markets.filter(m => !isWeatherMarket(m));
+            // Pick 1 random active perp market per tick to stagger execution
+            const selectedMarketId = markets[Math.floor(Math.random() * markets.length)];
 
-            // Apply 5:1 Ratio Priority (Pick 5 Weather Markets & 1 Crypto Market per tick)
-            const countWeather = Math.min(weatherMarkets.length, 5);
-            const countCrypto = Math.min(cryptoMarkets.length, 1);
-
-            const shuffledWeather = [...weatherMarkets].sort(() => 0.5 - Math.random());
-            const shuffledCrypto = [...cryptoMarkets].sort(() => 0.5 - Math.random());
-
-            const selectedMarkets = [
-                ...shuffledWeather.slice(0, countWeather),
-                ...shuffledCrypto.slice(0, countCrypto)
-            ];
-
-            for (const marketId of selectedMarkets) {
-                await placeOrderBookPair(marketId);
+            if (selectedMarketId) {
+                console.log(`🤖 [Trading Bot Service] Executing 15m staggered order pair for market: ${selectedMarketId}`);
+                await placeOrderBookPair(selectedMarketId);
             }
         } catch (e: any) {
             console.error(`🤖 [Trading Bot Service] Error:`, e.message || e);
         } finally {
-            const intervalMins = Number(process.env.BOT_INTERVAL_MINUTES || 30);
-            const intervalMs = Math.max(1, intervalMins) * 60 * 1000;
-            setTimeout(loop, intervalMs);
+            // Staggered interval: 15 minutes between each bot trade (4 trades per hour max)
+            const STAGGER_INTERVAL_MS = 15 * 60 * 1000;
+            console.log(`🤖 [Trading Bot Service] Next perp trade scheduled in 15 minutes.`);
+            setTimeout(loop, STAGGER_INTERVAL_MS);
         }
     };
 
-    loop();
+    // Stagger initial launch by 15 minutes on server boot
+    setTimeout(loop, 15 * 60 * 1000);
 }
 
 async function placeOrderBookPair(marketId: string) {

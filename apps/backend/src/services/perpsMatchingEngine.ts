@@ -60,6 +60,13 @@ export const matchPerpOrdersAsync = async (perpMarketId: string, network: string
         };
 
         for (const order of orders) {
+            const expTime = new Date(order.expiration).getTime();
+            if (expTime > 0 && expTime < Date.now()) {
+                console.log(`[Perp Matching Engine] ⏳ Order ${order.id} is expired. Marking EXPIRED.`);
+                await supabase.from('perp_orders').update({ status: 'EXPIRED' }).eq('id', order.id);
+                continue;
+            }
+
             console.log(`[Perp Matching Engine] Attempting on-chain AMM fill for order ${order.id}`);
 
             try {

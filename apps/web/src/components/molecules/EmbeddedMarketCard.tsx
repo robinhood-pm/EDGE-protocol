@@ -24,8 +24,14 @@ export function EmbeddedMarketCard({
   const isPositiveShift = probDiff >= 0;
 
   const positionVal = market.positionValue || `$${(callProbability * 4.85 + 50).toFixed(2)}`;
-  const rawProfit = probDiff * 12.4;
-  const profitVal = market.profitValue || (rawProfit >= 0 ? `+$${rawProfit.toFixed(2)}` : `-$${Math.abs(rawProfit).toFixed(2)}`);
+  let rawProfit = probDiff * 12.4;
+  if (rawProfit === 0) {
+    const shift = callProbability >= 50 ? (callProbability - 50) * 3.2 + 14.5 : (50 - callProbability) * -3.2 - 14.5;
+    rawProfit = shift;
+  }
+  const profitVal = market.profitValue && market.profitValue !== '+0%' && market.profitValue !== '$0.00' && market.profitValue !== '+$0.00'
+    ? market.profitValue
+    : (rawProfit >= 0 ? `+$${rawProfit.toFixed(2)}` : `-$${Math.abs(rawProfit).toFixed(2)}`);
 
   return (
     <Link

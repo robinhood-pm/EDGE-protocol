@@ -243,7 +243,7 @@ async function enrichCalloutRows(data: any[], network: NetworkType) {
         status: 'Live',
       },
       callProbability: Number(item.call_probability),
-      currentProbability: Number(item.current_probability),
+      currentProbability: yesProb !== undefined && !isNaN(yesProb) ? yesProb : Number(item.current_probability ?? item.call_probability ?? 50),
       deadline: new Date(item.deadline),
       status: item.status,
       visibility: item.visibility,

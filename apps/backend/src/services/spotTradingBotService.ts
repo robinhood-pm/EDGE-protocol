@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const TICK_INTERVAL_MS = 10 * 60 * 1000;
+const TICK_INTERVAL_MS = 45 * 60 * 1000; // 45 minutes cooldown between spot market maker trades
 let botWallets: ethers.Wallet[] = [];
 let isBotLoopRunning = false;
 
@@ -316,5 +316,6 @@ export function startSpotTradingBotService() {
     }
   };
 
-  loop();
+  // Stagger initial launch by 20 minutes on server boot
+  setTimeout(loop, 20 * 60 * 1000);
 }

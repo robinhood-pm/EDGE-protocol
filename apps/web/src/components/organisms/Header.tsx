@@ -1,39 +1,62 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Grid, List, Globe } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Search, Globe } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
-import { Badge } from '@/components/atoms/Badge';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-
 import { NotificationPanel } from '@/components/organisms/social/NotificationPanel';
 
+const NAV_ITEMS = [
+  { href: '/callouts', label: 'Callouts', showPulse: true },
+  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/markets', label: 'Markets' },
+  { href: '/perps', label: 'Perps' },
+  { href: '/portfolio', label: 'Portfolio' },
+];
+
 export function Header() {
+  const pathname = usePathname();
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#070709]/60 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] supports-[backdrop-filter]:bg-[#070709]/40">
+    <header className="sticky top-0 z-50 w-full bg-[#070709]/80 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] supports-[backdrop-filter]:bg-[#070709]/60">
       <div className="container flex h-16 items-center px-4 max-w-screen-2xl mx-auto gap-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full bg-white ring-1 ring-white/80 shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer group">
+            <Image
+              unoptimized
+              src="/logo.png?v=2"
+              alt="EDGE Protocol Logo"
+              width={24}
+              height={24}
+              className="rounded-full bg-white ring-1 ring-white/80 shadow-[0_0_15px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform"
+            />
             <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-[13px] font-medium text-white/70">
-            <Link href="/callouts" className="hover:text-white transition-colors flex items-center gap-1.5 font-semibold text-white">
-              <span className="w-1.5 h-1.5 rounded-full bg-yes animate-pulse" />
-              Callouts
-            </Link>
-            <Link href="/leaderboard" className="hover:text-white transition-colors">
-              Leaderboard
-            </Link>
-            <Link href="/markets" className="hover:text-white transition-colors">
-              Markets
-            </Link>
-            <Link href="/perps" className="hover:text-white transition-colors">
-              Perps
-            </Link>
-            <Link href="/portfolio" className="hover:text-white transition-colors">
-              Portfolio
-            </Link>
+
+          <nav className="hidden md:flex items-center gap-1 text-[13px] font-medium bg-white/5 p-1 rounded-full border border-white/10">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-4 py-1.5 rounded-full flex items-center gap-2 font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-[1.02]'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {item.showPulse && (
+                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-600 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
+                  )}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
         

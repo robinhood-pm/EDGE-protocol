@@ -230,22 +230,21 @@ export function startCalloutBotService() {
     } catch (err: any) {
       console.error('🤖 [Callout Prophet Bot] ⚠️ Error during callout generation:', err.message || err);
     } finally {
-      // Configurable interval (default 30 minutes, e.g., 28-32 mins random spread)
-      const intervalMinutes = Number(process.env.BOT_INTERVAL_MINUTES || 30);
-      const minMs = Math.max(1, intervalMinutes - 2) * 60 * 1000;
-      const maxMs = (intervalMinutes + 2) * 60 * 1000;
+      // Cooldown interval: 45 to 60 minutes random spread
+      const minMs = 45 * 60 * 1000;
+      const maxMs = 60 * 60 * 1000;
       const randomDelay = getRandomInt(minMs, maxMs);
-      console.log(`🤖 [Callout Prophet Bot] Next callout scheduled in Math.round(${randomDelay / 60000}) minutes.`);
+      console.log(`🤖 [Callout Prophet Bot] Next callout scheduled in ${Math.round(randomDelay / 60000)} minutes.`);
       setTimeout(loop, randomDelay);
     }
   };
 
-  // Launch initial tick safely
+  // Launch initial tick safely with 10m initial delay on boot
   setTimeout(async () => {
     try {
       await loop();
     } catch (e) {
       console.error('🤖 [Callout Prophet Bot] Initial launch error:', e);
     }
-  }, 5000);
+  }, 10 * 60 * 1000);
 }

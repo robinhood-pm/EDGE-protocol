@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Flame, ArrowRight, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { CalloutCard } from '@/components/organisms/social/CalloutCard';
 import { Callout } from '@/types/social';
 
-const TrendingCalloutSkeleton = () => (
+const RecentCalloutSkeleton = () => (
   <div className="space-y-3">
-    {[1, 2, 3].map((i) => (
+    {[1, 2, 3, 4].map((i) => (
       <div key={i} className="bg-[#0c0d12] border border-white/5 rounded-2xl p-4 space-y-3 animate-pulse">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -37,36 +37,50 @@ const TrendingCalloutSkeleton = () => (
 );
 
 export function TrendingCallouts() {
-  const [trending, setTrending] = useState<Callout[]>([]);
+  const [recentCallouts, setRecentCallouts] = useState<Callout[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchTrendingCallouts = async () => {
-      setIsLoading(true);
+    let isMounted = true;
+
+    const fetchRecentCallouts = async (silent = false) => {
+      if (!silent) setIsLoading(true);
       try {
         const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
         const backendUrl = rawApiUrl ? rawApiUrl : '';
         const rawNetwork = process.env.NEXT_PUBLIC_NETWORK;
         const network = rawNetwork ? rawNetwork : 'testnet';
 
-        const res = await fetch(`${backendUrl}/api/callouts?network=${network}&limit=3`);
-        if (!res.ok) throw new Error('Failed to fetch trending callouts');
+        const res = await fetch(`${backendUrl}/api/callouts?network=${network}&limit=4`);
+        if (!res.ok) throw new Error('Failed to fetch recent callouts');
         
         const data = await res.json();
-        if (data.success && Array.isArray(data.callouts)) {
-          setTrending(data.callouts.slice(0, 3));
+        if (isMounted && data.success && Array.isArray(data.callouts)) {
+          setRecentCallouts(data.callouts.slice(0, 4));
         }
       } catch (err) {
-        console.error('Error fetching trending callouts:', err);
+        console.error('Error fetching recent callouts:', err);
       } finally {
-        setIsLoading(false);
+        if (isMounted && !silent) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchTrendingCallouts();
+    fetchRecentCallouts(false);
+
+    // Real-time polling every 6 seconds to show fresh callouts live
+    const interval = setInterval(() => {
+      fetchRecentCallouts(true);
+    }, 6000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
-  if (!isLoading && trending.length === 0) {
+  if (!isLoading && recentCallouts.length === 0) {
     return null;
   }
 
@@ -74,8 +88,12 @@ export function TrendingCallouts() {
     <div className="bg-[#070709] border border-white/10 rounded-2xl p-5 shadow-xl space-y-4 max-h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar sticky top-24">
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
-          <h3 className="font-bold text-sm text-white">Trending Callouts</h3>
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <h3 className="font-bold text-sm text-white">Recent Callouts</h3>
+          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full ml-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            LIVE
+          </span>
         </div>
         <Link href="/callouts" className="text-xs text-yes font-bold hover:underline inline-flex items-center gap-1">
           <span>View Feed</span>
@@ -85,9 +103,9 @@ export function TrendingCallouts() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <TrendingCalloutSkeleton />
+          <RecentCalloutSkeleton />
         ) : (
-          trending.map((callout) => (
+          recentCallouts.map((callout) => (
             <CalloutCard key={callout.id} callout={callout} isCompact={true} />
           ))
         )}
