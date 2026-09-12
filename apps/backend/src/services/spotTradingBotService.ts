@@ -128,6 +128,11 @@ function getRandomFloat(min: number, max: number, decimals: number = 2): number 
   return parseFloat(val.toFixed(decimals));
 }
 
+function getTickIntervalMs(): number {
+  const mins = Number(process.env.BOT_INTERVAL_MINUTES || 30);
+  return Math.max(1, mins) * 60 * 1000;
+}
+
 export function startSpotTradingBotService() {
   if (isBotLoopRunning) return;
   isBotLoopRunning = true;
@@ -139,9 +144,10 @@ export function startSpotTradingBotService() {
     return;
   }
 
-  console.log(`🤖 [Spot Market Maker Bot] Service started on server with ${botWallets.length} bot wallets.`);
+  const intervalMins = Number(process.env.BOT_INTERVAL_MINUTES || 30);
+  console.log(`🤖 [Spot Market Maker Bot] Service started on server with ${botWallets.length} bot wallets (interval: ${intervalMins}m).`);
   seedBotProfilesAndStats(botWallets);
-  console.log(`🤖 [Spot Market Maker Bot] Monitoring active spot prediction markets every ${TICK_INTERVAL_MS / 1000}s...`);
+  console.log(`🤖 [Spot Market Maker Bot] Monitoring active spot prediction markets every ${intervalMins}m...`);
 
   const loop = async () => {
     try {

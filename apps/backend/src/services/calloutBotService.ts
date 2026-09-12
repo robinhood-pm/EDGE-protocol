@@ -230,26 +230,22 @@ export function startCalloutBotService() {
     } catch (err: any) {
       console.error('🤖 [Callout Prophet Bot] ⚠️ Error during callout generation:', err.message || err);
     } finally {
-      // Human Micro-Behavior: Random delay around 10 minutes (9-11 mins)
-      const randomDelay = getRandomInt(9 * 60 * 1000, 11 * 60 * 1000);
+      // Configurable interval (default 30 minutes, e.g., 28-32 mins random spread)
+      const intervalMinutes = Number(process.env.BOT_INTERVAL_MINUTES || 30);
+      const minMs = Math.max(1, intervalMinutes - 2) * 60 * 1000;
+      const maxMs = (intervalMinutes + 2) * 60 * 1000;
+      const randomDelay = getRandomInt(minMs, maxMs);
+      console.log(`🤖 [Callout Prophet Bot] Next callout scheduled in Math.round(${randomDelay / 60000}) minutes.`);
       setTimeout(loop, randomDelay);
     }
   };
 
-  // Launch initial tick & batch seed if callout count is low
+  // Launch initial tick safely
   setTimeout(async () => {
     try {
-      const { count } = await supabase.from('callouts').select('*', { count: 'exact', head: true });
-      if (!count || count < 10) {
-        console.log('🤖 [Callout Prophet Bot] Seeding initial batch of 10 callouts...');
-        for (let i = 0; i < 10; i++) {
-          await loop();
-        }
-      } else {
-        await loop();
-      }
+      await loop();
     } catch (e) {
-      loop();
+      console.error('🤖 [Callout Prophet Bot] Initial launch error:', e);
     }
-  }, 2000);
+  }, 5000);
 }

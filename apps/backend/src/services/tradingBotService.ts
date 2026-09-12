@@ -98,7 +98,9 @@ export function startTradingBotService() {
         } catch (e: any) {
             console.error(`🤖 [Trading Bot Service] Error:`, e.message || e);
         } finally {
-            setTimeout(loop, TICK_INTERVAL_MS);
+            const intervalMins = Number(process.env.BOT_INTERVAL_MINUTES || 30);
+            const intervalMs = Math.max(1, intervalMins) * 60 * 1000;
+            setTimeout(loop, intervalMs);
         }
     };
 
