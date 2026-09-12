@@ -1,0 +1,324 @@
+[
+  {
+    "id": "callout-001",
+    "network": "testnet",
+    "creator": {
+      "address": "0x4AedeF2aa208737A2c672EC65402419c284e00fF",
+      "handle": "CryptoWhale",
+      "displayName": "CryptoWhale",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+      "isVerified": true,
+      "xHandle": "CryptoWhale"
+    },
+    "headline": "BTC breaks $150K before year end. Institutional inflows are relentless.",
+    "thesis": "ETF flows just hit $2.1B weekly. BlackRock accumulation hasn't slowed. On-chain metrics screaming breakout.",
+    "category": "crypto",
+    "conviction": "YES",
+    "confidence": 82,
+    "market": {
+      "id": "bitcoin-100k",
+      "title": "Bitcoin crosses $100k in 2026?",
+      "image": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      "yesProbability": 89,
+      "noProbability": 11,
+      "totalVolume": 5200000
+    },
+    "callProbability": 72,
+    "currentProbability": 89,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726056000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 4200,
+      "likes": 127,
+      "comments": 34,
+      "reposts": 18,
+      "saves": 45,
+      "tradesAttributed": 89,
+      "volumeAttributed": "342000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 72,
+      "marketId": "bitcoin-100k",
+      "timestamp": 1726056000
+    }
+  },
+  {
+    "id": "callout-002",
+    "network": "testnet",
+    "creator": {
+      "address": "0x0D4370e1d441088897d684B983735767f1b3e086",
+      "handle": "MacroMaster",
+      "displayName": "MacroMaster",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=MacroMaster",
+      "isVerified": false,
+      "xHandle": null
+    },
+    "headline": "Fed won't cut in Q1. Labor market too strong for dovish pivot.",
+    "thesis": "NFP still printing above 200K. Services inflation sticky at 4.2%. Powell explicitly said 'no rush'. The market is pricing in fantasy cuts.",
+    "category": "macro",
+    "conviction": "NO",
+    "confidence": 66,
+    "market": {
+      "id": "fed-rates-q1-2027",
+      "title": "Fed cuts rates in Q1 2027?",
+      "image": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+      "yesProbability": 45,
+      "noProbability": 55,
+      "totalVolume": 650000
+    },
+    "callProbability": 52,
+    "currentProbability": 45,
+    "deadline": 1801353600,
+    "status": "LIVE",
+    "createdAt": 1726070400,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 2300,
+      "likes": 67,
+      "comments": 22,
+      "reposts": 8,
+      "saves": 19,
+      "tradesAttributed": 34,
+      "volumeAttributed": "87000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 52,
+      "marketId": "fed-rates-q1-2027",
+      "timestamp": 1726070400
+    }
+  },
+  {
+    "id": "callout-003",
+    "network": "testnet",
+    "creator": {
+      "address": "0xBa642ACaf7d6F495369f2d64155c89e9a50902f0",
+      "handle": "EthMaxi",
+      "displayName": "EthMaxi",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=EthMaxi",
+      "isVerified": true,
+      "xHandle": "EthMaxi"
+    },
+    "headline": "SOL ATH in 2026 is a lock. Ecosystem momentum is unreal.",
+    "thesis": null,
+    "category": "crypto",
+    "conviction": "YES",
+    "confidence": 78,
+    "market": {
+      "id": "sol-new-ath-2026",
+      "title": "Solana new ATH in 2026?",
+      "image": "https://cryptologos.cc/logos/solana-sol-logo.png",
+      "yesProbability": 68,
+      "noProbability": 32,
+      "totalVolume": 1245000
+    },
+    "callProbability": 53,
+    "currentProbability": 68,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726142400,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 1800,
+      "likes": 89,
+      "comments": 15,
+      "reposts": 12,
+      "saves": 31,
+      "tradesAttributed": 56,
+      "volumeAttributed": "156000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 53,
+      "marketId": "sol-new-ath-2026",
+      "timestamp": 1726142400
+    }
+  },
+  {
+    "id": "callout-004",
+    "network": "testnet",
+    "creator": {
+      "address": "0xe9E4b92D58F1146f927A696D728F79F797d55CaA",
+      "handle": "TechBear",
+      "displayName": "TechBear 🐻",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=TechBear",
+      "isVerified": false,
+      "xHandle": "TechBear_x"
+    },
+    "headline": "Tesla Robotaxi won't get California approval this year. Regulatory hell incoming.",
+    "thesis": "Waymo has years of data. Tesla FSD still requires supervision. CPUC timeline doesn't support 2026. Regulatory capture by incumbents.",
+    "category": "technology",
+    "conviction": "NO",
+    "confidence": 88,
+    "market": {
+      "id": "tesla-robotaxi-approval",
+      "title": "Tesla Robotaxi regulatory approval in California by 2026?",
+      "image": "https://cdn-icons-png.flaticon.com/512/3266/3266679.png",
+      "yesProbability": 15,
+      "noProbability": 85,
+      "totalVolume": 450000
+    },
+    "callProbability": 22,
+    "currentProbability": 15,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726200000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 5600,
+      "likes": 203,
+      "comments": 67,
+      "reposts": 29,
+      "saves": 58,
+      "tradesAttributed": 112,
+      "volumeAttributed": "289000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 22,
+      "marketId": "tesla-robotaxi-approval",
+      "timestamp": 1726200000
+    }
+  },
+  {
+    "id": "callout-005",
+    "network": "testnet",
+    "creator": {
+      "address": "0x3A2Ac33E6AEDca79Eb1b93D3d1BB558Bb7961Fe9",
+      "handle": "AlphaHunter",
+      "displayName": "AlphaHunter",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=AlphaHunter",
+      "isVerified": true,
+      "xHandle": "AlphaHunter"
+    },
+    "headline": "TikTok ban happening. Congressional momentum is unstoppable.",
+    "thesis": "Bipartisan support confirmed. Supreme Court already upheld the framework. ByteDance won't divest. Timeline is set.",
+    "category": "world",
+    "conviction": "YES",
+    "confidence": 71,
+    "market": {
+      "id": "tiktok-ban-us",
+      "title": "Will TikTok be fully banned in the US by end of 2026?",
+      "image": "https://cdn-icons-png.flaticon.com/512/3046/3046128.png",
+      "yesProbability": 42,
+      "noProbability": 58,
+      "totalVolume": 612000
+    },
+    "callProbability": 35,
+    "currentProbability": 42,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726300000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 8900,
+      "likes": 312,
+      "comments": 89,
+      "reposts": 45,
+      "saves": 72,
+      "tradesAttributed": 167,
+      "volumeAttributed": "445000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 35,
+      "marketId": "tiktok-ban-us",
+      "timestamp": 1726300000
+    }
+  },
+  {
+    "id": "callout-006",
+    "network": "testnet",
+    "creator": {
+      "address": "0x4AedeF2aa208737A2c672EC65402419c284e00fF",
+      "handle": "CryptoWhale",
+      "displayName": "CryptoWhale",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+      "isVerified": true,
+      "xHandle": "CryptoWhale"
+    },
+    "headline": "GPT-5 dropping this year. OpenAI can't afford to wait.",
+    "thesis": "Competitive pressure from Google, Anthropic, Meta. Revenue growth demands a flagship release. Sam already hinted at 'next frontier' model.",
+    "category": "technology",
+    "conviction": "YES",
+    "confidence": 92,
+    "market": {
+      "id": "openai-gpt-5-release",
+      "title": "OpenAI releases GPT-5 (or equivalent) in 2026?",
+      "image": "https://cdn-icons-png.flaticon.com/512/3178/3178158.png",
+      "yesProbability": 95,
+      "noProbability": 5,
+      "totalVolume": 940000
+    },
+    "callProbability": 88,
+    "currentProbability": 95,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726380000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 3400,
+      "likes": 156,
+      "comments": 41,
+      "reposts": 22,
+      "saves": 38,
+      "tradesAttributed": 73,
+      "volumeAttributed": "198000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 88,
+      "marketId": "openai-gpt-5-release",
+      "timestamp": 1726380000
+    }
+  },
+  {
+    "id": "callout-007",
+    "network": "testnet",
+    "creator": {
+      "address": "0xc223FF40e02f246C7B5Da4AeD69b5101f4aA3795",
+      "handle": "Contrarian99",
+      "displayName": "Contrarian99",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=Contrarian99",
+      "isVerified": false,
+      "xHandle": null
+    },
+    "headline": "SpaceX Mars landing by 2027? Absolutely. Starship progress is ahead of schedule.",
+    "thesis": "Ship 35 test was near-flawless. Booster catch rate improving. Raptor 3 production scaling. Elon has explicitly committed to the timeline.",
+    "category": "world",
+    "conviction": "YES",
+    "confidence": 55,
+    "market": {
+      "id": "spacex-mars-landing",
+      "title": "SpaceX uncrewed Mars landing by 2027?",
+      "image": "https://cdn-icons-png.flaticon.com/512/1984/1984165.png",
+      "yesProbability": 38,
+      "noProbability": 62,
+      "totalVolume": 125000
+    },
+    "callProbability": 31,
+    "currentProbability": 38,
+    "deadline": 1830297600,
+    "status": "LIVE",
+    "createdAt": 1726400000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 6700,
+      "likes": 245,
+      "comments": 78,
+      "reposts": 33,
+      "saves": 61,
+      "tradesAttributed": 44,
+      "volumeAttributed": "67000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 31,
+      "marketId": "spacex-mars-landing",
+      "timestamp": 1726400000
+    }
+  }
+]

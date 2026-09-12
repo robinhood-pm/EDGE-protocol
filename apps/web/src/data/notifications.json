@@ -1,0 +1,102 @@
+[
+  {
+    "id": "notif-001",
+    "network": "testnet",
+    "type": "new_callout",
+    "userId": "profile-001",
+    "refId": "callout-005",
+    "content": "AlphaHunter posted a new callout: \"TikTok ban happening.\"",
+    "isRead": false,
+    "createdAt": 1726300000,
+    "creator": {
+      "handle": "AlphaHunter",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=AlphaHunter"
+    }
+  },
+  {
+    "id": "notif-002",
+    "network": "testnet",
+    "type": "counter_call",
+    "userId": "profile-001",
+    "refId": "callout-002",
+    "content": "EthMaxi posted a counter call to MacroMaster's Fed rate callout.",
+    "isRead": false,
+    "createdAt": 1726280000,
+    "creator": {
+      "handle": "EthMaxi",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=EthMaxi"
+    }
+  },
+  {
+    "id": "notif-003",
+    "network": "testnet",
+    "type": "probability_moved",
+    "userId": "profile-001",
+    "refId": "callout-001",
+    "content": "Your callout \"BTC breaks $150K\" market moved +7% in your favor. Now at 89%.",
+    "isRead": true,
+    "createdAt": 1726250000,
+    "creator": null
+  },
+  {
+    "id": "notif-004",
+    "network": "testnet",
+    "type": "callout_won",
+    "userId": "profile-003",
+    "refId": "callout-resolved-001",
+    "content": "Your callout WON! \"ETH above $4K\" resolved YES. Edge: +42 pts.",
+    "isRead": true,
+    "createdAt": 1726200000,
+    "creator": null
+  },
+  {
+    "id": "notif-005",
+    "network": "testnet",
+    "type": "new_follower",
+    "userId": "profile-001",
+    "refId": "profile-006",
+    "content": "Contrarian99 started following you.",
+    "isRead": false,
+    "createdAt": 1726190000,
+    "creator": {
+      "handle": "Contrarian99",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=Contrarian99"
+    }
+  },
+  {
+    "id": "notif-006",
+    "network": "testnet",
+    "type": "market_closing",
+    "userId": "profile-001",
+    "refId": "gta-6-release-date",
+    "content": "Market \"Will GTA 6 release before Fall 2026?\" closes in 24 hours.",
+    "isRead": false,
+    "createdAt": 1726180000,
+    "creator": null
+  },
+  {
+    "id": "notif-007",
+    "network": "testnet",
+    "type": "reply",
+    "userId": "profile-001",
+    "refId": "callout-001",
+    "content": "MacroMaster replied to your callout: \"Strong call. ETF flows confirm this.\"",
+    "isRead": true,
+    "createdAt": 1726170000,
+    "creator": {
+      "handle": "MacroMaster",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=MacroMaster"
+    }
+  },
+  {
+    "id": "notif-008",
+    "network": "testnet",
+    "type": "trending",
+    "userId": "profile-004",
+    "refId": "callout-004",
+    "content": "Your callout is trending! \"Tesla Robotaxi won't get California approval\" has 5.6K views.",
+    "isRead": false,
+    "createdAt": 1726160000,
+    "creator": null
+  }
+]

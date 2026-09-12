@@ -1,3 +1,5 @@
+export * from './social';
+
 export interface MarketOption {
   label: string;
   probability?: number;

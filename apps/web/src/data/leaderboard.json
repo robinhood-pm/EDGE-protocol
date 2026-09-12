@@ -1,0 +1,85 @@
+{
+  "network": "testnet",
+  "periods": {
+    "24h": [
+      {
+        "rank": 1,
+        "profileId": "profile-005",
+        "handle": "AlphaHunter",
+        "displayName": "AlphaHunter",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=AlphaHunter",
+        "isVerified": true,
+        "edgeScore": 1247,
+        "accuracy": 68.3,
+        "resolvedCalls": 120,
+        "followersCount": 4521,
+        "volumeAttributed": "2100000"
+      },
+      {
+        "rank": 2,
+        "profileId": "profile-004",
+        "handle": "TechBear",
+        "displayName": "TechBear 🐻",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=TechBear",
+        "isVerified": false,
+        "edgeScore": 891,
+        "accuracy": 77.3,
+        "resolvedCalls": 22,
+        "followersCount": 512,
+        "volumeAttributed": "420000"
+      },
+      {
+        "rank": 3,
+        "profileId": "profile-001",
+        "handle": "CryptoWhale",
+        "displayName": "CryptoWhale",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+        "isVerified": true,
+        "edgeScore": 812,
+        "accuracy": 68.3,
+        "resolvedCalls": 60,
+        "followersCount": 1247,
+        "volumeAttributed": "1240000"
+      },
+      {
+        "rank": 4,
+        "profileId": "profile-002",
+        "handle": "MacroMaster",
+        "displayName": "MacroMaster",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=MacroMaster",
+        "isVerified": false,
+        "edgeScore": 744,
+        "accuracy": 75.0,
+        "resolvedCalls": 32,
+        "followersCount": 634,
+        "volumeAttributed": "540000"
+      },
+      {
+        "rank": 5,
+        "profileId": "profile-003",
+        "handle": "EthMaxi",
+        "displayName": "EthMaxi",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=EthMaxi",
+        "isVerified": true,
+        "edgeScore": 698,
+        "accuracy": 62.8,
+        "resolvedCalls": 78,
+        "followersCount": 2103,
+        "volumeAttributed": "890000"
+      },
+      {
+        "rank": 6,
+        "profileId": "profile-006",
+        "handle": "Contrarian99",
+        "displayName": "Contrarian99",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=Contrarian99",
+        "isVerified": false,
+        "edgeScore": 623,
+        "accuracy": 61.1,
+        "resolvedCalls": 18,
+        "followersCount": 287,
+        "volumeAttributed": "180000"
+      }
+    ]
+  }
+}

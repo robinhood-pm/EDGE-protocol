@@ -8,6 +8,9 @@ import { Market } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, BarChart3 } from 'lucide-react';
 
+import { TrendingCallouts } from '@/components/organisms/social/TrendingCallouts';
+import { TopCallers } from '@/components/organisms/social/TopCallers';
+
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("Trending");
 
@@ -28,13 +31,13 @@ export default function Home() {
   const liveCount = data?.liveCount || 0;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#070709] text-white">
       <Header />
       <CategoryTabs activeCategory={activeCategory} onCategoryChange={setActiveCategory} liveCount={liveCount} />
       
       <main className="flex-1 container max-w-screen-2xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content Area */}
+          {/* Main Markets Area */}
           <div className="flex-1">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -70,12 +73,18 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {markets.map((market) => (
                   <MarketCard key={market.id} market={market} />
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Social Prediction Sidebar */}
+          <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
+            <TopCallers />
+            <TrendingCallouts />
           </div>
         </div>
       </main>

@@ -6,6 +6,8 @@ import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/Badge';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
+import { NotificationPanel } from '@/components/organisms/social/NotificationPanel';
+
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070709]/60 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] supports-[backdrop-filter]:bg-[#070709]/40">
@@ -15,7 +17,14 @@ export function Header() {
             <Image unoptimized src="/logo.png?v=2" alt="EDGE Protocol Logo" width={24} height={24} className="rounded-full bg-white ring-1 ring-white/80 shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
             <span className="font-bold text-lg tracking-tight drop-shadow-md">EDGE Protocol</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-10 text-[13px] font-medium text-white/70">
+          <nav className="hidden md:flex items-center gap-8 text-[13px] font-medium text-white/70">
+            <Link href="/callouts" className="hover:text-white transition-colors flex items-center gap-1.5 font-semibold text-white">
+              <span className="w-1.5 h-1.5 rounded-full bg-yes animate-pulse" />
+              Callouts
+            </Link>
+            <Link href="/leaderboard" className="hover:text-white transition-colors">
+              Leaderboard
+            </Link>
             <Link href="/markets" className="hover:text-white transition-colors">
               Markets
             </Link>
@@ -33,7 +42,7 @@ export function Header() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
             <input 
               type="text" 
-              placeholder="Search markets..." 
+              placeholder="Search markets or callouts..." 
               className="w-full bg-white/5 border border-white/10 text-white rounded-full h-10 pl-10 pr-4 text-sm focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/30 transition-all placeholder:text-white/40"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -44,7 +53,8 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-3">
+          <NotificationPanel />
           <div className="hidden sm:flex items-center gap-2">
             <ConnectButton 
               showBalance={false} 

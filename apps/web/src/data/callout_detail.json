@@ -1,0 +1,195 @@
+{
+  "callout": {
+    "id": "callout-001",
+    "network": "testnet",
+    "creator": {
+      "address": "0x4AedeF2aa208737A2c672EC65402419c284e00fF",
+      "handle": "CryptoWhale",
+      "displayName": "CryptoWhale",
+      "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+      "isVerified": true,
+      "xHandle": "CryptoWhale",
+      "stats": {
+        "totalCalls": 87,
+        "resolvedCalls": 60,
+        "correctCalls": 41,
+        "accuracy": 68.3,
+        "edgeScore": 812
+      }
+    },
+    "headline": "BTC breaks $150K before year end. Institutional inflows are relentless.",
+    "thesis": "ETF flows just hit $2.1B weekly. BlackRock accumulation hasn't slowed. On-chain metrics screaming breakout.",
+    "category": "crypto",
+    "conviction": "YES",
+    "confidence": 82,
+    "market": {
+      "id": "bitcoin-100k",
+      "title": "Bitcoin crosses $100k in 2026?",
+      "image": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      "yesProbability": 89,
+      "noProbability": 11,
+      "totalVolume": 5200000,
+      "status": "Live",
+      "endTime": "Dec 31, 2026"
+    },
+    "callProbability": 72,
+    "currentProbability": 89,
+    "deadline": 1767139200,
+    "status": "LIVE",
+    "createdAt": 1726056000,
+    "resolvedAt": null,
+    "visibility": "PUBLIC",
+    "metrics": {
+      "views": 4200,
+      "likes": 127,
+      "comments": 34,
+      "reposts": 18,
+      "saves": 45,
+      "tradesAttributed": 89,
+      "volumeAttributed": "342000"
+    },
+    "snapshot": {
+      "probabilityAtCall": 72,
+      "marketId": "bitcoin-100k",
+      "timestamp": 1726056000
+    }
+  },
+  "counterCalls": [
+    {
+      "id": "callout-counter-001",
+      "creator": {
+        "address": "0xe9E4b92D58F1146f927A696D728F79F797d55CaA",
+        "handle": "TechBear",
+        "displayName": "TechBear 🐻",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=TechBear",
+        "isVerified": false,
+        "stats": {
+          "edgeScore": 891,
+          "accuracy": 77.3
+        }
+      },
+      "conviction": "NO",
+      "confidence": 60,
+      "thesis": "Macro headwinds. DXY strengthening. Liquidity tightening globally. BTC needs rate cuts to push past $120K.",
+      "callProbability": 85,
+      "createdAt": 1726100000
+    }
+  ],
+  "comments": [
+    {
+      "id": "comment-001",
+      "userId": "profile-002",
+      "creator": {
+        "handle": "MacroMaster",
+        "displayName": "MacroMaster",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=MacroMaster",
+        "isVerified": false
+      },
+      "content": "Strong call. ETF flows confirm this thesis. BlackRock alone is doing $500M/week.",
+      "likes": 12,
+      "createdAt": 1726070000,
+      "parentId": null,
+      "positionBadge": {
+        "side": "YES",
+        "shares": 2500
+      }
+    },
+    {
+      "id": "comment-002",
+      "userId": "profile-003",
+      "creator": {
+        "handle": "EthMaxi",
+        "displayName": "EthMaxi",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=EthMaxi",
+        "isVerified": true
+      },
+      "content": "Agreed on the setup. The question is timing. Could easily front-run Dec deadline.",
+      "likes": 8,
+      "createdAt": 1726075000,
+      "parentId": null,
+      "positionBadge": null
+    },
+    {
+      "id": "comment-003",
+      "userId": "profile-004",
+      "creator": {
+        "handle": "TechBear",
+        "displayName": "TechBear 🐻",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=TechBear",
+        "isVerified": false
+      },
+      "content": "ETF flows can reverse fast. Remember Q1 2024? Everyone was bullish and then CPI hit.",
+      "likes": 5,
+      "createdAt": 1726080000,
+      "parentId": null,
+      "positionBadge": {
+        "side": "NO",
+        "shares": 1800
+      }
+    },
+    {
+      "id": "comment-004",
+      "userId": "profile-001",
+      "creator": {
+        "handle": "CryptoWhale",
+        "displayName": "CryptoWhale",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+        "isVerified": true
+      },
+      "content": "Q1 2024 was pre-halving. Completely different macro setup now. Yields are falling.",
+      "likes": 15,
+      "createdAt": 1726085000,
+      "parentId": "comment-003",
+      "positionBadge": null
+    },
+    {
+      "id": "comment-005",
+      "userId": "profile-006",
+      "creator": {
+        "handle": "Contrarian99",
+        "displayName": "Contrarian99",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=Contrarian99",
+        "isVerified": false
+      },
+      "content": "72% call probability with 82% confidence is bold. Let's see if the track record holds.",
+      "likes": 3,
+      "createdAt": 1726090000,
+      "parentId": null,
+      "positionBadge": null
+    }
+  ],
+  "topCallers": {
+    "yes": [
+      {
+        "handle": "CryptoWhale",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=CryptoWhale",
+        "calledAt": 72,
+        "edgeScore": 812
+      },
+      {
+        "handle": "AlphaHunter",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=AlphaHunter",
+        "calledAt": 65,
+        "edgeScore": 1247
+      }
+    ],
+    "no": [
+      {
+        "handle": "TechBear",
+        "avatarUrl": "https://api.dicebear.com/9.x/thumbs/svg?seed=TechBear",
+        "calledAt": 85,
+        "edgeScore": 891
+      }
+    ]
+  },
+  "creatorConsensus": {
+    "allCreators": {
+      "yesPct": 73,
+      "totalCallers": 15
+    },
+    "top100EdgeScore": {
+      "yesPct": 66,
+      "totalCallers": 8
+    }
+  }
+}
