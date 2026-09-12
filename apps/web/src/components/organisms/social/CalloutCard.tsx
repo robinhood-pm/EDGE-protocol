@@ -9,7 +9,7 @@ import { EmbeddedMarketCard } from '@/components/molecules/EmbeddedMarketCard';
 import { SocialActionBar } from '@/components/molecules/SocialActionBar';
 import { InlineTradeModal } from '@/components/organisms/social/InlineTradeModal';
 import { CheckCircle2, ShieldCheck, Flame, Eye } from 'lucide-react';
-import { formatCompactNumber } from '@/lib/utils';
+import { formatCompactNumber, formatTimeAgo } from '@/lib/utils';
 
 interface CalloutCardProps {
   callout: Callout;
@@ -23,12 +23,7 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
   const [selectedTradeSide, setSelectedTradeSide] = useState<'YES' | 'NO'>('YES');
 
   const isYesConviction = callout.conviction === 'YES';
-  const formattedTime = new Date(callout.createdAt * 1000).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const formattedTimeAgo = formatTimeAgo(callout.createdAt);
 
   const handleOpenTrade = (side: 'YES' | 'NO') => {
     if (onTradeClick) {
@@ -54,10 +49,8 @@ export function CalloutCard({ callout, onTradeClick, onCounterClick, isCompact =
               </span>
               {callout.creator.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-yes fill-yes/20" />}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-white/50">
-              <span className="font-mono">@{callout.creator.handle}</span>
-              <span>•</span>
-              <span>{formattedTime}</span>
+            <div className="text-[11px] text-white/50 font-medium">
+              {formattedTimeAgo}
             </div>
           </div>
         </Link>
